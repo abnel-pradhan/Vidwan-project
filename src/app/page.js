@@ -2,13 +2,9 @@
 import { useState } from "react";
 
 export default function CollegeDashboard() {
-  // State to track if the mobile menu is open or closed
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Hardcoded for standalone deployment
   const collegeName = "Alpine"; 
 
-  // The Academic Dataset
   const data = {
     institution: `${collegeName} University`,
     metrics: {
@@ -52,12 +48,13 @@ export default function CollegeDashboard() {
           </span>
         </div>
 
-        {/* Desktop Navigation (Hidden on Mobile) */}
+        {/* Desktop Navigation (Unified UX) */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
           <span className="text-cyan-400 cursor-pointer">Home</span>
           <a href="/faculty" className="hover:text-white transition cursor-pointer">Faculty Directory</a>
+          <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
+          <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
           
-          {/* We added the Login Link here! */}
           <a href="/login" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
             Sign In <span className="text-cyan-500">→</span>
           </a>
@@ -67,7 +64,7 @@ export default function CollegeDashboard() {
           </button>
         </div>
 
-        {/* Mobile Hamburger Button (Visible only on Mobile) */}
+        {/* Mobile Hamburger Button */}
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="md:hidden text-slate-300 hover:text-white focus:outline-none z-50"
@@ -82,14 +79,15 @@ export default function CollegeDashboard() {
         </button>
       </nav>
 
-      {/* SINGLE Mobile Dropdown Menu Panel (Duplicates Removed) */}
+      {/* Mobile Dropdown Menu Panel (Unified UX) */}
       {isMobileMenuOpen && (
         <div className="md:hidden relative z-40 bg-[#070a13]/95 backdrop-blur-xl border-b border-slate-800">
           <div className="flex flex-col px-8 py-6 space-y-4 text-sm font-medium text-slate-400">
             <span className="text-cyan-400 cursor-pointer">Home</span>
             <a href="/faculty" className="hover:text-white transition cursor-pointer">Faculty Directory</a>
+            <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
+            <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
             
-            {/* Added Mobile Login Link */}
             <a href="/login" className="text-white font-bold hover:text-cyan-400 transition cursor-pointer">
               Sign In →
             </a>
