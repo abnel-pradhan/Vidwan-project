@@ -1,179 +1,193 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react"; // Added useEffect
 
-export default function ScholarProfile({ params }) {
+export default function FacultyDirectory() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
+  const [searchType, setSearchType] = useState("people"); 
+  const collegeName = "Alpine";
 
-  // Data mapped directly from the professor's screenshot
-  const profileData = {
-    name: "Dr VIGNESHWAR MEKHA",
-    designation: "Assistant professor",
-    institution: "Govt. Degree College for Women (Begumpet)",
-    vidwanId: "243439",
-    profileUrl: "https://vidwan.inflibnet.ac.in/profile/243439",
-    score: "5.7/10",
-    articles: 4,
-    awards: 2,
-    expertise: "Geography",
-    expertiseDesc: "I AM WORKING AS AN ACADEMICIAN IN GOVERNMENT DEGREE COLLEGE FOR WOMEN, BEGUMPET, HYDERABAD",
-    similarExperts: [
-      { name: "J.P. Singh", domain: "Geography" },
-      { name: "T. Banerjee", domain: "Geography" },
-      { name: "Utpal Baruah", domain: "Geography" },
-      { name: "Ratna Upadhyaya Joshi", domain: "Geography" },
-      { name: "A N Balchand", domain: "Geography" }
-    ]
-  };
+  // NEW FIX: Listen for search words in the URL when the page loads!
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const incomingSearch = urlParams.get("search");
+    
+    if (incomingSearch) {
+      setSearchQuery(incomingSearch);
+      setSearchType("problems"); // Assume it's a problem/topic if coming from a profile
+    }
+  }, []);
 
-  // The function that redirects the user back to the main search hub
-  const handleSearch = (e) => {
-    e.preventDefault();
-    router.push("/faculty");
-  };
+  const facultyList = [
+    { id: 1, name: "Dr. Ramya K.", dept: "Computer Science", expertise: "Waste Prediction, Machine Learning", pubs: 45, citations: 890 },
+    { id: 2, name: "Dr. Vigneshwar Mekha", dept: "Artificial Intelligence", expertise: "Computer Vision, Edge Computing, Autonomous Systems", pubs: 32, citations: 1205 },
+    { id: 3, name: "Prof. Uganya G.", dept: "Information Technology", expertise: "Data Science, Neural Networks, IoT", pubs: 28, citations: 410 },
+    { id: 4, name: "Dr. T. Banerjee", dept: "Geography", expertise: "Geographic Information Systems, Climate Modeling", pubs: 18, citations: 215 },
+  ];
+
+  const filteredFaculty = facultyList.filter(faculty => {
+    if (searchQuery === "") return true;
+    
+    if (searchType === "people") {
+      return faculty.name.toLowerCase().includes(searchQuery.toLowerCase());
+    } else {
+      return faculty.expertise.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             faculty.dept.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+  });
 
   return (
     <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden">
       
-      {/* Top Navigation with the requested Search Bar */}
-      <nav className="relative z-50 flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-slate-900 bg-[#070a13] gap-4">
-        <a href="/faculty" className="flex items-center gap-2 hover:opacity-80 transition text-white font-black tracking-tighter text-xl">
-          Vidwan<span className="text-cyan-500">Hub</span>
-        </a>
-        
-        {/* The Search Menu (Now functional!) */}
-        <form onSubmit={handleSearch} className="relative w-full md:w-96">
-          <input 
-            type="text" 
-            placeholder="Search problems, topics, or people..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0b101e] border border-slate-800 rounded-full px-5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition shadow-inner"
-          />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 hover:text-cyan-400">
-            🔍
-          </button>
-        </form>
+      <div className="absolute top-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-cyan-900/10 blur-[150px] pointer-events-none" />
 
-        <div className="hidden md:flex gap-4 text-xs font-semibold">
-          <button className="bg-slate-900 border border-slate-800 hover:border-cyan-500 text-white px-4 py-2 rounded-lg transition">Download CV</button>
-          <a href="/dashboard" className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg transition">Workspace View</a>
+      <nav className="relative z-50 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto border-b border-slate-900/50">
+        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition">
+          <span className="text-xl font-black text-white tracking-tighter">
+            Vidwan<span className="text-cyan-500">Hub</span>
+          </span>
+        </a>
+
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
+          <a href="/" className="hover:text-white transition cursor-pointer">Home</a>
+          <span className="text-cyan-400 cursor-pointer">Faculty Directory</span>
+          <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
+          <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
+          
+          <a href="/login" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
+            Sign In <span className="text-cyan-500">→</span>
+          </a>
+          
+          <button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-semibold px-6 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
+            Contact Admin
+          </button>
         </div>
+
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="md:hidden text-slate-300 hover:text-white focus:outline-none z-50"
+        >
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {isMobileMenuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
       </nav>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 py-8">
+      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-24">
         
-        {/* 3-COLUMN GRID LAYOUT */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* LEFT SIDEBAR (Photo & Menu) */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Profile Photo Card */}
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 flex flex-col items-center shadow-lg">
-              <div className="w-32 h-32 rounded-xl bg-gradient-to-tr from-cyan-900 to-slate-900 border border-slate-700 flex items-center justify-center mb-4 overflow-hidden">
-                <span className="text-5xl font-black text-cyan-500">{profileData.name.charAt(3)}</span>
-              </div>
-              <button className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded transition w-full">
-                Change Photo
-              </button>
-            </div>
+        <div className="max-w-3xl mx-auto mb-20 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-6">
+            Expertise Discovery Engine
+          </h1>
+          <p className="text-slate-400 mb-8">
+            Search verified institutional records at {collegeName} by specific scholar or underlying research problems.
+          </p>
 
-            {/* Vertical Menu */}
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl overflow-hidden shadow-lg">
-              <ul className="text-sm font-medium text-slate-400 divide-y divide-slate-800/50">
-                <li className="bg-slate-800/50 text-cyan-400 border-l-4 border-cyan-500 px-5 py-3 cursor-pointer">Profile</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Personal Information</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Expertise Information</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Experience</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Education Qualification</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Honours and Awards</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Research Project</li>
-              </ul>
-            </div>
+          <div className="relative flex items-center w-full bg-[#0b101e] border-2 border-slate-800 focus-within:border-cyan-500 rounded-full overflow-hidden shadow-[0_0_30px_rgba(8,145,178,0.1)] transition-colors">
+            <span className="pl-6 text-xl">🔍</span>
+            <input
+              type="text"
+              placeholder={searchType === "people" ? "Search by professor name... (e.g., Vigneshwar)" : "Search algorithms, domains, or problems... (e.g., Vision)"}
+              className="w-full bg-transparent border-none text-white px-4 py-4 md:py-5 focus:outline-none placeholder-slate-600 text-sm md:text-base"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <button className="hidden md:block bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-10 py-5 transition">
+              Search
+            </button>
           </div>
 
-          {/* MIDDLE COLUMN (Main Info) */}
-          <div className="lg:col-span-6 space-y-6">
-            
-            {/* Top Metrics Row */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-center shadow-lg">
-                <span className="text-xs text-slate-400 uppercase tracking-wider mb-1">Profile Score</span>
-                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-black text-white">{profileData.score}</span>
-                </div>
-                <div className="w-full bg-slate-950 rounded-full h-1.5 mt-2">
-                  <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: '57%' }}></div>
-                </div>
-              </div>
-              
-              <div className="bg-cyan-950/30 border border-cyan-900/50 rounded-xl p-4 flex flex-col items-center justify-center shadow-lg">
-                <span className="text-3xl font-black text-cyan-400">{profileData.articles}</span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider mt-1">Articles</span>
-              </div>
-
-              <div className="bg-blue-950/30 border border-blue-900/50 rounded-xl p-4 flex flex-col items-center justify-center shadow-lg">
-                <span className="text-3xl font-black text-blue-400">{profileData.awards}</span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider mt-1">Awards</span>
-              </div>
-            </div>
-
-            {/* Basic Identity Card */}
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 shadow-lg relative">
-              <button className="absolute top-6 right-6 text-slate-500 hover:text-cyan-400">✏️</button>
-              <h1 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">{profileData.name}</h1>
-              <p className="text-sm text-slate-400 mb-1">{profileData.designation}</p>
-              <p className="text-sm text-slate-400 mb-6">{profileData.institution}</p>
-              
-              <div className="bg-slate-900/80 border border-slate-800 rounded px-4 py-2 inline-flex items-center gap-2">
-                <span className="text-xs font-bold text-white">Profile URL:</span>
-                <a href="#" className="text-xs text-cyan-400 hover:underline truncate">{profileData.profileUrl}</a>
-              </div>
-            </div>
-
-            {/* Expertise Card */}
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-sm font-bold text-white flex items-center gap-2">💡 Expertise</h2>
-                <button className="text-xs border border-slate-700 hover:border-cyan-500 px-3 py-1 rounded transition text-slate-400 hover:text-white">Edit Expertise</button>
-              </div>
-              <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">{profileData.expertise}</h3>
-                <p className="text-xs text-slate-400 uppercase tracking-widest leading-relaxed">
-                  ⚙ {profileData.expertiseDesc}
-                </p>
-              </div>
-            </div>
-
+          <div className="flex justify-center gap-8 mt-6">
+            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-white transition group">
+              <input 
+                type="radio" 
+                name="searchType"
+                checked={searchType === "people"} 
+                onChange={() => {
+                  setSearchType("people");
+                  setSearchQuery("");
+                }} 
+                className="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-900 border-slate-700 cursor-pointer" 
+              />
+              <span className={searchType === "people" ? "text-cyan-400 font-bold" : ""}>👥 Search People</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-white transition group">
+              <input 
+                type="radio" 
+                name="searchType"
+                checked={searchType === "problems"} 
+                onChange={() => {
+                  setSearchType("problems");
+                  setSearchQuery("");
+                }} 
+                className="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-900 border-slate-700 cursor-pointer" 
+              />
+              <span className={searchType === "problems" ? "text-cyan-400 font-bold" : ""}>💡 Search Problems</span>
+            </label>
           </div>
-
-          {/* RIGHT SIDEBAR (Similar Experts) */}
-          <div className="lg:col-span-3 space-y-6">
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-slate-900/50 border-b border-slate-800 px-5 py-4">
-                <h2 className="text-sm font-bold text-white flex items-center gap-2">👥 Similar Experts <span className="text-xs text-slate-500 font-normal">(345)</span></h2>
-              </div>
-              <ul className="divide-y divide-slate-800/50">
-                {profileData.similarExperts.map((expert, idx) => (
-                  <li key={idx} className="p-4 hover:bg-slate-900/30 transition flex items-center gap-3 cursor-pointer group">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-cyan-900 group-hover:text-cyan-400 transition">
-                      {expert.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-200 group-hover:text-white transition">{expert.name}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-500">{expert.domain}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="p-4 border-t border-slate-800 bg-slate-900/20 text-center">
-                <button className="text-xs font-bold text-cyan-500 hover:text-cyan-400 bg-cyan-950/30 px-4 py-2 rounded transition">View More Experts</button>
-              </div>
-            </div>
-          </div>
-
         </div>
+
+        <div className="mb-6 flex justify-between items-end border-b border-slate-800 pb-4">
+          <h2 className="text-lg font-bold text-white">
+            {searchQuery === "" ? "All Faculty Profiles" : `Search Results (${filteredFaculty.length})`}
+          </h2>
+        </div>
+
+        {filteredFaculty.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            {filteredFaculty.map((faculty) => (
+              <a key={faculty.id} href={`/faculty/${faculty.id}`} className="block group">
+                <div className="bg-[#0b101e] border border-slate-800 hover:border-cyan-500/50 p-6 rounded-2xl transition-all shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] group-hover:shadow-[0_10px_30px_-15px_rgba(8,145,178,0.2)] h-full flex flex-col justify-between">
+                  
+                  <div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-14 h-14 rounded-full bg-cyan-950 text-cyan-400 font-bold text-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                        {faculty.name.charAt(0)}
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
+                        {faculty.dept}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">{faculty.name}</h3>
+                    
+                    <div className="mb-6">
+                      <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">Expertise Domains:</p>
+                      <p className="text-sm text-slate-300 leading-relaxed">{faculty.expertise}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center border-t border-slate-800 pt-5 mt-4">
+                    <div className="flex gap-8">
+                      <div className="text-left">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Pubs</p>
+                        <p className="text-base font-bold text-white">{faculty.pubs}</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Citations</p>
+                        <p className="text-base font-bold text-white">{faculty.citations}</p>
+                      </div>
+                    </div>
+                    <div className="text-cyan-500 font-bold bg-cyan-950/30 px-4 py-2 rounded-lg group-hover:bg-cyan-600 group-hover:text-white transition">
+                      View Profile →
+                    </div>
+                  </div>
+
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-[#0b101e] border border-slate-800 rounded-2xl">
+            <div className="text-4xl mb-4">🔬</div>
+            <h3 className="text-xl font-bold text-white mb-2">No profiles found</h3>
+            <p className="text-slate-500 text-sm">We couldn't find any scholars matching "{searchQuery}" in this domain.</p>
+          </div>
+        )}
       </main>
     </div>
   );

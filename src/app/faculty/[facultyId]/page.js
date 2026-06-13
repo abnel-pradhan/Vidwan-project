@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ScholarProfile({ params }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
-  // Data mapped directly from the professor's screenshot
   const profileData = {
     name: "Dr VIGNESHWAR MEKHA",
     designation: "Assistant professor",
@@ -25,17 +26,24 @@ export default function ScholarProfile({ params }) {
     ]
   };
 
+  // NEW FIX: Attach the search word to the URL!
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim() !== "") {
+      router.push(`/faculty?search=${encodeURIComponent(searchQuery)}`);
+    } else {
+      router.push("/faculty");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden">
-      
-      {/* Top Navigation with the requested Search Bar */}
       <nav className="relative z-50 flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-slate-900 bg-[#070a13] gap-4">
         <a href="/faculty" className="flex items-center gap-2 hover:opacity-80 transition text-white font-black tracking-tighter text-xl">
           Vidwan<span className="text-cyan-500">Hub</span>
         </a>
         
-        {/* The Search Menu he requested */}
-        <div className="relative w-full md:w-96">
+        <form onSubmit={handleSearch} className="relative w-full md:w-96">
           <input 
             type="text" 
             placeholder="Search problems, topics, or people..." 
@@ -43,10 +51,10 @@ export default function ScholarProfile({ params }) {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#0b101e] border border-slate-800 rounded-full px-5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition shadow-inner"
           />
-          <button className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 hover:text-cyan-400">
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 hover:text-cyan-400">
             🔍
           </button>
-        </div>
+        </form>
 
         <div className="hidden md:flex gap-4 text-xs font-semibold">
           <button className="bg-slate-900 border border-slate-800 hover:border-cyan-500 text-white px-4 py-2 rounded-lg transition">Download CV</button>
@@ -55,13 +63,8 @@ export default function ScholarProfile({ params }) {
       </nav>
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-        
-        {/* 3-COLUMN GRID LAYOUT */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* LEFT SIDEBAR (Photo & Menu) */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Profile Photo Card */}
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 flex flex-col items-center shadow-lg">
               <div className="w-32 h-32 rounded-xl bg-gradient-to-tr from-cyan-900 to-slate-900 border border-slate-700 flex items-center justify-center mb-4 overflow-hidden">
                 <span className="text-5xl font-black text-cyan-500">{profileData.name.charAt(3)}</span>
@@ -71,24 +74,17 @@ export default function ScholarProfile({ params }) {
               </button>
             </div>
 
-            {/* Vertical Menu */}
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl overflow-hidden shadow-lg">
               <ul className="text-sm font-medium text-slate-400 divide-y divide-slate-800/50">
                 <li className="bg-slate-800/50 text-cyan-400 border-l-4 border-cyan-500 px-5 py-3 cursor-pointer">Profile</li>
                 <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Personal Information</li>
                 <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Expertise Information</li>
                 <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Experience</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Education Qualification</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Honours and Awards</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Research Project</li>
               </ul>
             </div>
           </div>
 
-          {/* MIDDLE COLUMN (Main Info) */}
           <div className="lg:col-span-6 space-y-6">
-            
-            {/* Top Metrics Row */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-center shadow-lg">
                 <span className="text-xs text-slate-400 uppercase tracking-wider mb-1">Profile Score</span>
@@ -111,9 +107,7 @@ export default function ScholarProfile({ params }) {
               </div>
             </div>
 
-            {/* Basic Identity Card */}
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 shadow-lg relative">
-              <button className="absolute top-6 right-6 text-slate-500 hover:text-cyan-400">✏️</button>
               <h1 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">{profileData.name}</h1>
               <p className="text-sm text-slate-400 mb-1">{profileData.designation}</p>
               <p className="text-sm text-slate-400 mb-6">{profileData.institution}</p>
@@ -124,11 +118,9 @@ export default function ScholarProfile({ params }) {
               </div>
             </div>
 
-            {/* Expertise Card */}
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
               <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">💡 Expertise</h2>
-                <button className="text-xs border border-slate-700 hover:border-cyan-500 px-3 py-1 rounded transition text-slate-400 hover:text-white">Edit Expertise</button>
               </div>
               <div className="p-6">
                 <h3 className="text-lg font-bold text-white mb-2">{profileData.expertise}</h3>
@@ -137,10 +129,8 @@ export default function ScholarProfile({ params }) {
                 </p>
               </div>
             </div>
-
           </div>
 
-          {/* RIGHT SIDEBAR (Similar Experts) */}
           <div className="lg:col-span-3 space-y-6">
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
               <div className="bg-slate-900/50 border-b border-slate-800 px-5 py-4">
@@ -159,9 +149,6 @@ export default function ScholarProfile({ params }) {
                   </li>
                 ))}
               </ul>
-              <div className="p-4 border-t border-slate-800 bg-slate-900/20 text-center">
-                <button className="text-xs font-bold text-cyan-500 hover:text-cyan-400 bg-cyan-950/30 px-4 py-2 rounded transition">View More Experts</button>
-              </div>
             </div>
           </div>
 
