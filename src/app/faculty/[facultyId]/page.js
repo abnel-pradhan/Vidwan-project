@@ -6,6 +6,18 @@ export default function ScholarProfile({ params }) {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
+  // Modal State Variables
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // Interactive State for Expertise (Allows live editing!)
+  const [expertiseTitle, setExpertiseTitle] = useState("Geography");
+  const [expertiseDesc, setExpertiseDesc] = useState("I AM WORKING AS AN ACADEMICIAN IN GOVERNMENT DEGREE COLLEGE FOR WOMEN, BEGUMPET, HYDERABAD");
+
+  // Temporary state for when the user is typing in the modal
+  const [tempTitle, setTempTitle] = useState(expertiseTitle);
+  const [tempDesc, setTempDesc] = useState(expertiseDesc);
+
+  // Static Profile Data
   const profileData = {
     name: "Dr VIGNESHWAR MEKHA",
     designation: "Assistant professor",
@@ -15,8 +27,6 @@ export default function ScholarProfile({ params }) {
     score: "5.7/10",
     articles: 4,
     awards: 2,
-    expertise: "Geography",
-    expertiseDesc: "I AM WORKING AS AN ACADEMICIAN IN GOVERNMENT DEGREE COLLEGE FOR WOMEN, BEGUMPET, HYDERABAD",
     similarExperts: [
       { name: "J.P. Singh", domain: "Geography" },
       { name: "T. Banerjee", domain: "Geography" },
@@ -26,7 +36,7 @@ export default function ScholarProfile({ params }) {
     ]
   };
 
-  // NEW FIX: Attach the search word to the URL!
+  // Search Function
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim() !== "") {
@@ -36,8 +46,83 @@ export default function ScholarProfile({ params }) {
     }
   };
 
+  // Save Modal Function
+  const handleSaveExpertise = (e) => {
+    e.preventDefault();
+    setExpertiseTitle(tempTitle);
+    setExpertiseDesc(tempDesc);
+    setIsEditModalOpen(false); // Close modal after saving
+  };
+
+  // Open Modal Function
+  const openModal = () => {
+    setTempTitle(expertiseTitle); // Load current title into modal
+    setTempDesc(expertiseDesc);   // Load current desc into modal
+    setIsEditModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden">
+      
+      {/* ----------------- EDIT EXPERTISE MODAL ----------------- */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#030712]/80 backdrop-blur-md transition-opacity">
+          <div className="bg-[#0b101e] border border-slate-800 rounded-2xl w-full max-w-lg shadow-[0_0_50px_rgba(8,145,178,0.15)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">✏️ Edit Expertise</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-white transition text-xl">
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveExpertise} className="p-6 space-y-5">
+              <div>
+                <label className="block text-xs font-mono text-slate-500 uppercase tracking-wider mb-2 ml-1">Primary Domain</label>
+                <input
+                  type="text"
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  className="w-full bg-[#030712] border border-slate-800 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-cyan-500 transition shadow-inner"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-mono text-slate-500 uppercase tracking-wider mb-2 ml-1">Detailed Description</label>
+                <textarea
+                  value={tempDesc}
+                  onChange={(e) => setTempDesc(e.target.value)}
+                  rows="4"
+                  className="w-full bg-[#030712] border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition resize-none shadow-inner leading-relaxed"
+                  required
+                ></textarea>
+              </div>
+              
+              {/* Modal Buttons */}
+              <div className="pt-4 flex gap-3 justify-end border-t border-slate-800/80">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditModalOpen(false)} 
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(8,145,178,0.4)] transition"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+      {/* ------------------------------------------------------ */}
+
       <nav className="relative z-50 flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-slate-900 bg-[#070a13] gap-4">
         <a href="/faculty" className="flex items-center gap-2 hover:opacity-80 transition text-white font-black tracking-tighter text-xl">
           Vidwan<span className="text-cyan-500">Hub</span>
@@ -64,6 +149,7 @@ export default function ScholarProfile({ params }) {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
           <div className="lg:col-span-3 space-y-6">
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 flex flex-col items-center shadow-lg">
               <div className="w-32 h-32 rounded-xl bg-gradient-to-tr from-cyan-900 to-slate-900 border border-slate-700 flex items-center justify-center mb-4 overflow-hidden">
@@ -121,11 +207,21 @@ export default function ScholarProfile({ params }) {
             <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
               <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">💡 Expertise</h2>
+                
+                {/* Trigger Button for Modal */}
+                <button 
+                  onClick={openModal} 
+                  className="text-xs border border-slate-700 hover:border-cyan-500 hover:bg-slate-800 px-3 py-1.5 rounded transition text-slate-400 hover:text-white"
+                >
+                  Edit Expertise
+                </button>
+
               </div>
               <div className="p-6">
-                <h3 className="text-lg font-bold text-white mb-2">{profileData.expertise}</h3>
+                {/* Displaying Live State Variables here! */}
+                <h3 className="text-lg font-bold text-white mb-2">{expertiseTitle}</h3>
                 <p className="text-xs text-slate-400 uppercase tracking-widest leading-relaxed">
-                  ⚙ {profileData.expertiseDesc}
+                  ⚙ {expertiseDesc}
                 </p>
               </div>
             </div>
