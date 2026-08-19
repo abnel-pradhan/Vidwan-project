@@ -61,16 +61,26 @@ export default function FacultySearchPage() {
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 p-8">
       <div className="max-w-5xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight text-white">Faculty Publication Ingestion</h1>
-          <p className="text-slate-400 text-sm mt-1">Search faculty profiles via OpenAlex and import verified research papers.</p>
+        
+        {/* Header */}
+        <header className="mb-8 flex justify-between items-center border-b border-slate-800 pb-5">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Faculty Publication Ingestion</h1>
+            <p className="text-slate-400 text-sm mt-1">Search faculty profiles via OpenAlex and import verified research papers.</p>
+          </div>
+          <a
+            href="/admin"
+            className="rounded-lg border border-slate-700 bg-slate-800/60 px-4 py-2 text-xs font-semibold text-slate-300 hover:border-cyan-500 hover:text-white transition"
+          >
+            Admin Portal →
+          </a>
         </header>
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex gap-3 mb-8">
           <input
             type="text"
-            placeholder="Search author name (e.g. Stephen Hawking, Utam Pradhan) or ORCID..."
+            placeholder="Search author name (e.g. Stephen Hawking, Andrew Ng) or ORCID..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 rounded-lg border border-slate-800 bg-[#0a0f1a] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
@@ -108,20 +118,28 @@ export default function FacultySearchPage() {
           </div>
         )}
 
-        {/* Selected Author Banner */}
+        {/* Selected Author Banner (Protected with selectedAuthor check) */}
         {selectedAuthor && (
-          <div className="flex items-center justify-between rounded-lg border border-cyan-500/30 bg-cyan-950/20 p-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-cyan-500/30 bg-cyan-950/20 p-4 mb-6">
             <div>
               <span className="text-xs text-cyan-400 font-semibold uppercase tracking-wider">Selected Author</span>
               <h3 className="text-lg font-bold text-white">{selectedAuthor.displayName}</h3>
               <p className="text-xs text-slate-400">{selectedAuthor.lastKnownInstitution}</p>
             </div>
-            <button
-              onClick={() => setSelectedAuthor(null)}
-              className="text-xs text-slate-400 hover:text-white underline"
-            >
-              Change Author
-            </button>
+            <div className="flex items-center gap-3">
+              <a
+                href={`/faculty/${selectedAuthor.id.replace('https://openalex.org/', '')}`}
+                className="rounded-lg bg-cyan-600/20 border border-cyan-500/40 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-600 hover:text-white transition"
+              >
+                View Full Portfolio Page →
+              </a>
+              <button
+                onClick={() => setSelectedAuthor(null)}
+                className="text-xs text-slate-400 hover:text-white underline"
+              >
+                Change Author
+              </button>
+            </div>
           </div>
         )}
 
@@ -142,6 +160,7 @@ export default function FacultySearchPage() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

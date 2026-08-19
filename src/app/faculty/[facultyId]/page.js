@@ -1,255 +1,139 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import React from 'react';
+import { getFacultyProfileData } from '@/app/actions/faculty';
+import { PublicationCard } from '@/components/PublicationCard';
 
-export default function ScholarProfile({ params }) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
+export default async function FacultyProfilePage({ params }) {
+  const resolvedParams = await params;
+  // Supports both [facultyId] and [id] folder names
+  const authorId = resolvedParams?.facultyId || resolvedParams?.id || '';
 
-  // Modal State Variables
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
-  // Interactive State for Expertise (Allows live editing!)
-  const [expertiseTitle, setExpertiseTitle] = useState("Geography");
-  const [expertiseDesc, setExpertiseDesc] = useState("I AM WORKING AS AN ACADEMICIAN IN GOVERNMENT DEGREE COLLEGE FOR WOMEN, BEGUMPET, HYDERABAD");
+  const data = await getFacultyProfileData(authorId);
 
-  // Temporary state for when the user is typing in the modal
-  const [tempTitle, setTempTitle] = useState(expertiseTitle);
-  const [tempDesc, setTempDesc] = useState(expertiseDesc);
+  if (!data.success) {
+    return (
+      <div className="min-h-screen bg-[#030712] text-slate-100 p-8 flex flex-col items-center justify-center">
+        <div className="max-w-md text-center rounded-xl border border-rose-500/20 bg-rose-950/10 p-6">
+          <h2 className="text-xl font-bold text-rose-400">Faculty Profile Error</h2>
+          <p className="text-sm text-slate-400 mt-2">{data.error}</p>
+          <a
+            href="/faculty"
+            className="mt-5 inline-block rounded-lg bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-500 transition"
+          >
+            Back to Search
+          </a>
+        </div>
+      </div>
+    );
+  }
 
-  // Static Profile Data
-  const profileData = {
-    name: "Dr VIGNESHWAR MEKHA",
-    designation: "Assistant professor",
-    institution: "Govt. Degree College for Women (Begumpet)",
-    vidwanId: "243439",
-    profileUrl: "https://vidwan.inflibnet.ac.in/profile/243439",
-    score: "5.7/10",
-    articles: 4,
-    awards: 2,
-    similarExperts: [
-      { name: "J.P. Singh", domain: "Geography" },
-      { name: "T. Banerjee", domain: "Geography" },
-      { name: "Utpal Baruah", domain: "Geography" },
-      { name: "Ratna Upadhyaya Joshi", domain: "Geography" },
-      { name: "A N Balchand", domain: "Geography" }
-    ]
-  };
-
-  // Search Function
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim() !== "") {
-      router.push(`/faculty?search=${encodeURIComponent(searchQuery)}`);
-    } else {
-      router.push("/faculty");
-    }
-  };
-
-  // Save Modal Function
-  const handleSaveExpertise = (e) => {
-    e.preventDefault();
-    setExpertiseTitle(tempTitle);
-    setExpertiseDesc(tempDesc);
-    setIsEditModalOpen(false); // Close modal after saving
-  };
-
-  // Open Modal Function
-  const openModal = () => {
-    setTempTitle(expertiseTitle); // Load current title into modal
-    setTempDesc(expertiseDesc);   // Load current desc into modal
-    setIsEditModalOpen(true);
-  };
+  const { metrics, approvedPublications, allPapers } = data;
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden">
-      
-      {/* ----------------- EDIT EXPERTISE MODAL ----------------- */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#030712]/80 backdrop-blur-md transition-opacity">
-          <div className="bg-[#0b101e] border border-slate-800 rounded-2xl w-full max-w-lg shadow-[0_0_50px_rgba(8,145,178,0.15)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">✏️ Edit Expertise</h3>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-white transition text-xl">
-                &times;
-              </button>
-            </div>
-
-            {/* Modal Form */}
-            <form onSubmit={handleSaveExpertise} className="p-6 space-y-5">
-              <div>
-                <label className="block text-xs font-mono text-slate-500 uppercase tracking-wider mb-2 ml-1">Primary Domain</label>
-                <input
-                  type="text"
-                  value={tempTitle}
-                  onChange={(e) => setTempTitle(e.target.value)}
-                  className="w-full bg-[#030712] border border-slate-800 rounded-xl px-4 py-3.5 text-white focus:outline-none focus:border-cyan-500 transition shadow-inner"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-mono text-slate-500 uppercase tracking-wider mb-2 ml-1">Detailed Description</label>
-                <textarea
-                  value={tempDesc}
-                  onChange={(e) => setTempDesc(e.target.value)}
-                  rows="4"
-                  className="w-full bg-[#030712] border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition resize-none shadow-inner leading-relaxed"
-                  required
-                ></textarea>
-              </div>
-              
-              {/* Modal Buttons */}
-              <div className="pt-4 flex gap-3 justify-end border-t border-slate-800/80">
-                <button 
-                  type="button" 
-                  onClick={() => setIsEditModalOpen(false)} 
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-[0_0_15px_rgba(8,145,178,0.4)] transition"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      )}
-      {/* ------------------------------------------------------ */}
-
-      <nav className="relative z-50 flex flex-col md:flex-row justify-between items-center px-6 py-4 border-b border-slate-900 bg-[#070a13] gap-4">
-        <a href="/faculty" className="flex items-center gap-2 hover:opacity-80 transition text-white font-black tracking-tighter text-xl">
-          Vidwan<span className="text-cyan-500">Hub</span>
-        </a>
+    <div className="min-h-screen bg-[#030712] text-slate-100 p-8">
+      <div className="max-w-5xl mx-auto space-y-8">
         
-        <form onSubmit={handleSearch} className="relative w-full md:w-96">
-          <input 
-            type="text" 
-            placeholder="Search problems, topics, or people..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0b101e] border border-slate-800 rounded-full px-5 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition shadow-inner"
-          />
-          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-500 hover:text-cyan-400">
-            🔍
-          </button>
-        </form>
-
-        <div className="hidden md:flex gap-4 text-xs font-semibold">
-          <button className="bg-slate-900 border border-slate-800 hover:border-cyan-500 text-white px-4 py-2 rounded-lg transition">Download CV</button>
-          <a href="/dashboard" className="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg transition">Workspace View</a>
+        {/* Navigation Bar */}
+        <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+          <a href="/faculty" className="text-xs text-slate-400 hover:text-cyan-400 transition flex items-center gap-1">
+            ← Back to Faculty Search
+          </a>
+          <a href="/admin" className="text-xs text-slate-400 hover:text-cyan-400 transition">
+            Admin Portal →
+          </a>
         </div>
-      </nav>
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          <div className="lg:col-span-3 space-y-6">
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 flex flex-col items-center shadow-lg">
-              <div className="w-32 h-32 rounded-xl bg-gradient-to-tr from-cyan-900 to-slate-900 border border-slate-700 flex items-center justify-center mb-4 overflow-hidden">
-                <span className="text-5xl font-black text-cyan-500">{profileData.name.charAt(3)}</span>
+        {/* Profile Header */}
+        <div className="rounded-2xl border border-slate-800 bg-[#0a0f1a] p-8 shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-400 border border-cyan-500/20">
+                Verified Researcher Profile
               </div>
-              <button className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded transition w-full">
-                Change Photo
-              </button>
+              <h1 className="text-3xl font-extrabold text-white tracking-tight">Faculty ID: {authorId}</h1>
+              <p className="text-sm text-slate-400">
+                Academic Research Portfolio & NAAC Metric Aggregation
+              </p>
             </div>
 
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl overflow-hidden shadow-lg">
-              <ul className="text-sm font-medium text-slate-400 divide-y divide-slate-800/50">
-                <li className="bg-slate-800/50 text-cyan-400 border-l-4 border-cyan-500 px-5 py-3 cursor-pointer">Profile</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Personal Information</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Expertise Information</li>
-                <li className="px-5 py-3 hover:bg-slate-900/50 hover:text-white cursor-pointer transition">Experience</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="lg:col-span-6 space-y-6">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gradient-to-r from-slate-800 to-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-center shadow-lg">
-                <span className="text-xs text-slate-400 uppercase tracking-wider mb-1">Profile Score</span>
-                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-black text-white">{profileData.score}</span>
-                </div>
-                <div className="w-full bg-slate-950 rounded-full h-1.5 mt-2">
-                  <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: '57%' }}></div>
-                </div>
-              </div>
-              
-              <div className="bg-cyan-950/30 border border-cyan-900/50 rounded-xl p-4 flex flex-col items-center justify-center shadow-lg">
-                <span className="text-3xl font-black text-cyan-400">{profileData.articles}</span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider mt-1">Articles</span>
-              </div>
-
-              <div className="bg-blue-950/30 border border-blue-900/50 rounded-xl p-4 flex flex-col items-center justify-center shadow-lg">
-                <span className="text-3xl font-black text-blue-400">{profileData.awards}</span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider mt-1">Awards</span>
-              </div>
-            </div>
-
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl p-6 shadow-lg relative">
-              <h1 className="text-2xl font-bold text-white mb-2 uppercase tracking-wide">{profileData.name}</h1>
-              <p className="text-sm text-slate-400 mb-1">{profileData.designation}</p>
-              <p className="text-sm text-slate-400 mb-6">{profileData.institution}</p>
-              
-              <div className="bg-slate-900/80 border border-slate-800 rounded px-4 py-2 inline-flex items-center gap-2">
-                <span className="text-xs font-bold text-white">Profile URL:</span>
-                <a href="#" className="text-xs text-cyan-400 hover:underline truncate">{profileData.profileUrl}</a>
-              </div>
-            </div>
-
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-slate-900/50 border-b border-slate-800 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-sm font-bold text-white flex items-center gap-2">💡 Expertise</h2>
-                
-                {/* Trigger Button for Modal */}
-                <button 
-                  onClick={openModal} 
-                  className="text-xs border border-slate-700 hover:border-cyan-500 hover:bg-slate-800 px-3 py-1.5 rounded transition text-slate-400 hover:text-white"
-                >
-                  Edit Expertise
-                </button>
-
-              </div>
-              <div className="p-6">
-                {/* Displaying Live State Variables here! */}
-                <h3 className="text-lg font-bold text-white mb-2">{expertiseTitle}</h3>
-                <p className="text-xs text-slate-400 uppercase tracking-widest leading-relaxed">
-                  ⚙ {expertiseDesc}
-                </p>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={`https://openalex.org/authors/${authorId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-medium text-slate-300 hover:border-cyan-500 hover:text-white transition"
+              >
+                OpenAlex Profile ↗
+              </a>
             </div>
           </div>
 
-          <div className="lg:col-span-3 space-y-6">
-            <div className="bg-[#0b101e] border border-slate-800 rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-slate-900/50 border-b border-slate-800 px-5 py-4">
-                <h2 className="text-sm font-bold text-white flex items-center gap-2">👥 Similar Experts <span className="text-xs text-slate-500 font-normal">(345)</span></h2>
-              </div>
-              <ul className="divide-y divide-slate-800/50">
-                {profileData.similarExperts.map((expert, idx) => (
-                  <li key={idx} className="p-4 hover:bg-slate-900/30 transition flex items-center gap-3 cursor-pointer group">
-                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-cyan-900 group-hover:text-cyan-400 transition">
-                      {expert.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-200 group-hover:text-white transition">{expert.name}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-slate-500">{expert.domain}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          {/* Metric Summary Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-800/80">
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">Total Publications</div>
+              <div className="text-2xl font-bold text-white mt-1">{metrics.totalWorks}</div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">Total Citations</div>
+              <div className="text-2xl font-bold text-cyan-400 mt-1">{metrics.totalCitations}</div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">Open Access</div>
+              <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.openAccessCount}</div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 uppercase tracking-wider">NAAC Approved (DB)</div>
+              <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.approvedForNaacCount}</div>
             </div>
           </div>
-
         </div>
-      </main>
+
+        {/* Section 1: NAAC Verified Publications (From PostgreSQL) */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span>🏛️</span> NAAC Verified Publications ({approvedPublications.length})
+            </h2>
+            <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+              Eligible for Criteria 3.4
+            </span>
+          </div>
+
+          {approvedPublications.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-800 bg-[#0a0f1a]/50 p-6 text-center text-sm text-slate-500">
+              No publications have been approved by the IQAC Admin yet for this profile.
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {approvedPublications.map((paper) => (
+                <div key={paper.id} className="relative">
+                  <PublicationCard paper={paper} />
+                  <div className="absolute top-4 right-4 text-xs font-semibold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                    ✓ Verified in DB
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Section 2: All Publications from OpenAlex */}
+        <div className="space-y-4 pt-6 border-t border-slate-800">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <span>📚</span> All Indexed Publications ({allPapers.length})
+          </h2>
+          <p className="text-xs text-slate-400">
+            Directly synchronized from OpenAlex global scholarly registry.
+          </p>
+
+          <div className="grid gap-4">
+            {allPapers.map((paper) => (
+              <PublicationCard key={paper.openAlexId} paper={paper} />
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
