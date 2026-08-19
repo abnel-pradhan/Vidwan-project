@@ -1,194 +1,148 @@
-"use client";
-import { useState, useEffect } from "react"; // Added useEffect
+'use client';
 
-export default function FacultyDirectory() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchType, setSearchType] = useState("people"); 
-  const collegeName = "Alpine";
+import React, { useState } from 'react';
+import { searchOpenAlexAuthor, fetchFacultyPapers } from '@/app/actions/openalex';
+import { savePublicationToDatabase } from '@/app/actions/publications';
+import { PublicationCard } from '@/components/PublicationCard';
 
-  // NEW FIX: Listen for search words in the URL when the page loads!
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const incomingSearch = urlParams.get("search");
-    
-    if (incomingSearch) {
-      setSearchQuery(incomingSearch);
-      setSearchType("problems"); // Assume it's a problem/topic if coming from a profile
-    }
-  }, []);
+export default function FacultySearchPage() {
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [authors, setAuthors] = useState([]);
+  const [papers, setPapers] = useState([]);
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
+  const [statusMessage, setStatusMessage] = useState('');
 
-  const facultyList = [
-    { id: 1, name: "Dr. Ramya K.", dept: "Computer Science", expertise: "Waste Prediction, Machine Learning", pubs: 45, citations: 890 },
-    { id: 2, name: "Dr. Vigneshwar Mekha", dept: "Artificial Intelligence", expertise: "Computer Vision, Edge Computing, Autonomous Systems", pubs: 32, citations: 1205 },
-    { id: 3, name: "Prof. Uganya G.", dept: "Information Technology", expertise: "Data Science, Neural Networks, IoT", pubs: 28, citations: 410 },
-    { id: 4, name: "Dr. T. Banerjee", dept: "Geography", expertise: "Geographic Information Systems, Climate Modeling", pubs: 18, citations: 215 },
-  ];
+  // 1. Search OpenAlex for Authors
+  async function handleSearch(e) {
+    e.preventDefault();
+    if (!query.trim()) return;
 
-  const filteredFaculty = facultyList.filter(faculty => {
-    if (searchQuery === "") return true;
-    
-    if (searchType === "people") {
-      return faculty.name.toLowerCase().includes(searchQuery.toLowerCase());
+    setLoading(true);
+    setPapers([]);
+    setSelectedAuthor(null);
+    setStatusMessage('');
+
+    const res = await searchOpenAlexAuthor(query);
+    if (res.success) {
+      setAuthors(res.authors);
+      if (res.authors.length === 0) setStatusMessage('No authors found.');
     } else {
-      return faculty.expertise.toLowerCase().includes(searchQuery.toLowerCase()) || 
-             faculty.dept.toLowerCase().includes(searchQuery.toLowerCase());
+      setStatusMessage('Error searching author: ' + res.error);
     }
-  });
+    setLoading(false);
+  }
+
+  // 2. Fetch Works for Selected Author
+  async function handleSelectAuthor(author) {
+    setSelectedAuthor(author);
+    setLoading(true);
+    setStatusMessage('');
+
+    const res = await fetchFacultyPapers(author.id);
+    if (res.success) {
+      setPapers(res.papers);
+    } else {
+      setStatusMessage('Error loading papers: ' + res.error);
+    }
+    setLoading(false);
+  }
+
+  // 3. Save Paper to Database
+  async function handleApprove(paper) {
+    const res = await savePublicationToDatabase(paper);
+    if (res.success) {
+      alert(`Saved "${paper.title}" to PostgreSQL database!`);
+    } else {
+      alert('Failed to save paper: ' + res.error);
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden">
-      
-      <div className="absolute top-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-cyan-900/10 blur-[150px] pointer-events-none" />
+    <div className="min-h-screen bg-[#030712] text-slate-100 p-8">
+      <div className="max-w-5xl mx-auto">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight text-white">Faculty Publication Ingestion</h1>
+          <p className="text-slate-400 text-sm mt-1">Search faculty profiles via OpenAlex and import verified research papers.</p>
+        </header>
 
-      <nav className="relative z-50 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto border-b border-slate-900/50">
-        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition">
-          <span className="text-xl font-black text-white tracking-tighter">
-            Vidwan<span className="text-cyan-500">Hub</span>
-          </span>
-        </a>
-
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
-          <a href="/" className="hover:text-white transition cursor-pointer">Home</a>
-          <span className="text-cyan-400 cursor-pointer">Faculty Directory</span>
-          <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
-          <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
-          
-          <a href="/login" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
-            Sign In <span className="text-cyan-500">→</span>
-          </a>
-          
-          <button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-semibold px-6 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
-            Contact Admin
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="flex gap-3 mb-8">
+          <input
+            type="text"
+            placeholder="Search author name (e.g. Stephen Hawking, Utam Pradhan) or ORCID..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1 rounded-lg border border-slate-800 bg-[#0a0f1a] px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-lg bg-cyan-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-cyan-500 disabled:opacity-50"
+          >
+            {loading ? 'Searching...' : 'Search'}
           </button>
-        </div>
+        </form>
 
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="md:hidden text-slate-300 hover:text-white focus:outline-none z-50"
-        >
-          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isMobileMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-      </nav>
+        {statusMessage && <p className="text-sm text-amber-400 mb-4">{statusMessage}</p>}
 
-      <main className="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-24">
-        
-        <div className="max-w-3xl mx-auto mb-20 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-6">
-            Expertise Discovery Engine
-          </h1>
-          <p className="text-slate-400 mb-8">
-            Search verified institutional records at {collegeName} by specific scholar or underlying research problems.
-          </p>
-
-          <div className="relative flex items-center w-full bg-[#0b101e] border-2 border-slate-800 focus-within:border-cyan-500 rounded-full overflow-hidden shadow-[0_0_30px_rgba(8,145,178,0.1)] transition-colors">
-            <span className="pl-6 text-xl">🔍</span>
-            <input
-              type="text"
-              placeholder={searchType === "people" ? "Search by professor name... (e.g., Vigneshwar)" : "Search algorithms, domains, or problems... (e.g., Vision)"}
-              className="w-full bg-transparent border-none text-white px-4 py-4 md:py-5 focus:outline-none placeholder-slate-600 text-sm md:text-base"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button className="hidden md:block bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-10 py-5 transition">
-              Search
-            </button>
-          </div>
-
-          <div className="flex justify-center gap-8 mt-6">
-            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-white transition group">
-              <input 
-                type="radio" 
-                name="searchType"
-                checked={searchType === "people"} 
-                onChange={() => {
-                  setSearchType("people");
-                  setSearchQuery("");
-                }} 
-                className="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-900 border-slate-700 cursor-pointer" 
-              />
-              <span className={searchType === "people" ? "text-cyan-400 font-bold" : ""}>👥 Search People</span>
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer hover:text-white transition group">
-              <input 
-                type="radio" 
-                name="searchType"
-                checked={searchType === "problems"} 
-                onChange={() => {
-                  setSearchType("problems");
-                  setSearchQuery("");
-                }} 
-                className="w-4 h-4 text-cyan-500 focus:ring-cyan-500 bg-slate-900 border-slate-700 cursor-pointer" 
-              />
-              <span className={searchType === "problems" ? "text-cyan-400 font-bold" : ""}>💡 Search Problems</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="mb-6 flex justify-between items-end border-b border-slate-800 pb-4">
-          <h2 className="text-lg font-bold text-white">
-            {searchQuery === "" ? "All Faculty Profiles" : `Search Results (${filteredFaculty.length})`}
-          </h2>
-        </div>
-
-        {filteredFaculty.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-            {filteredFaculty.map((faculty) => (
-              <a key={faculty.id} href={`/faculty/${faculty.id}`} className="block group">
-                <div className="bg-[#0b101e] border border-slate-800 hover:border-cyan-500/50 p-6 rounded-2xl transition-all shadow-[0_10px_30px_-15px_rgba(0,0,0,0.5)] group-hover:shadow-[0_10px_30px_-15px_rgba(8,145,178,0.2)] h-full flex flex-col justify-between">
-                  
-                  <div>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-14 h-14 rounded-full bg-cyan-950 text-cyan-400 font-bold text-xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
-                        {faculty.name.charAt(0)}
-                      </div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">
-                        {faculty.dept}
-                      </span>
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors">{faculty.name}</h3>
-                    
-                    <div className="mb-6">
-                      <p className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1">Expertise Domains:</p>
-                      <p className="text-sm text-slate-300 leading-relaxed">{faculty.expertise}</p>
-                    </div>
+        {/* Author Disambiguation Results */}
+        {authors.length > 0 && !selectedAuthor && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-3 text-slate-200">Select Matching Author Profile:</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {authors.map((author) => (
+                <div
+                  key={author.id}
+                  onClick={() => handleSelectAuthor(author)}
+                  className="cursor-pointer rounded-lg border border-slate-800 bg-[#0a0f1a] p-4 transition hover:border-cyan-500"
+                >
+                  <div className="font-semibold text-cyan-400">{author.displayName}</div>
+                  <div className="text-xs text-slate-400 mt-1">{author.lastKnownInstitution}</div>
+                  <div className="text-xs text-slate-500 mt-2">
+                    {author.worksCount} works · {author.citedByCount} citations
                   </div>
-                  
-                  <div className="flex justify-between items-center border-t border-slate-800 pt-5 mt-4">
-                    <div className="flex gap-8">
-                      <div className="text-left">
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Pubs</p>
-                        <p className="text-base font-bold text-white">{faculty.pubs}</p>
-                      </div>
-                      <div className="text-left">
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Citations</p>
-                        <p className="text-base font-bold text-white">{faculty.citations}</p>
-                      </div>
-                    </div>
-                    <div className="text-cyan-500 font-bold bg-cyan-950/30 px-4 py-2 rounded-lg group-hover:bg-cyan-600 group-hover:text-white transition">
-                      View Profile →
-                    </div>
-                  </div>
-
                 </div>
-              </a>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-20 bg-[#0b101e] border border-slate-800 rounded-2xl">
-            <div className="text-4xl mb-4">🔬</div>
-            <h3 className="text-xl font-bold text-white mb-2">No profiles found</h3>
-            <p className="text-slate-500 text-sm">We couldn't find any scholars matching "{searchQuery}" in this domain.</p>
+              ))}
+            </div>
           </div>
         )}
-      </main>
+
+        {/* Selected Author Banner */}
+        {selectedAuthor && (
+          <div className="flex items-center justify-between rounded-lg border border-cyan-500/30 bg-cyan-950/20 p-4 mb-6">
+            <div>
+              <span className="text-xs text-cyan-400 font-semibold uppercase tracking-wider">Selected Author</span>
+              <h3 className="text-lg font-bold text-white">{selectedAuthor.displayName}</h3>
+              <p className="text-xs text-slate-400">{selectedAuthor.lastKnownInstitution}</p>
+            </div>
+            <button
+              onClick={() => setSelectedAuthor(null)}
+              className="text-xs text-slate-400 hover:text-white underline"
+            >
+              Change Author
+            </button>
+          </div>
+        )}
+
+        {/* Papers List */}
+        {papers.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-200">
+              Fetched Publications ({papers.length})
+            </h2>
+            <div className="grid gap-4">
+              {papers.map((paper) => (
+                <PublicationCard
+                  key={paper.openAlexId}
+                  paper={paper}
+                  onApprove={handleApprove}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

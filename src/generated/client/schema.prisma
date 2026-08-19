@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// ENUMS
+// -----------------------------------------------------------------------------
+
+enum UserRole {
+  SUPER_ADMIN
+  UNIVERSITY_ADMIN
+  DEPT_HEAD
+  FACULTY
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum PublicationStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum TaskType {
+  OPENALEX_SYNC
+  SCRAPER_RUN
+  NAAC_REPORT_GEN
+  BULK_INVITE
+}
+
+enum TaskStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+// -----------------------------------------------------------------------------
+// INSTITUTIONAL HIERARCHY
+// -----------------------------------------------------------------------------
+
+model University {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  website   String?
+  city      String?
+  state     String?
+  country   String   @default("India")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  departments Department[]
+  users       User[]
+  invites     FacultyInvite[]
+  naacReports NaacReport[]
+
+  @@index([name])
+}
+
+model Department {
+  id           String     @id @default(uuid())
+  name         String
+  code         String?
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  facultyProfiles FacultyProfile[]
+  invites         FacultyInvite[]
+
+  @@unique([universityId, name])
+  @@index([universityId])
+}
+
+// -----------------------------------------------------------------------------
+// USERS & AUTHENTICATION
+// -----------------------------------------------------------------------------
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String?
+  role         UserRole    @default(FACULTY)
+  universityId String?
+  university   University? @relation(fields: [universityId], references: [id], onDelete: SetNull)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  facultyProfile FacultyProfile?
+  activityLogs   ActivityLog[]
+
+  @@index([email])
+  @@index([universityId, role])
+}
+
+model FacultyInvite {
+  id           String       @id @default(uuid())
+  email        String
+  role         UserRole     @default(FACULTY)
+  universityId String
+  departmentId String?
+  token        String       @unique
+  status       InviteStatus @default(PENDING)
+  expiresAt    DateTime
+  createdAt    DateTime     @default(now())
+
+  university University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([token])
+  @@index([universityId, status])
+}
+
+// -----------------------------------------------------------------------------
+// FACULTY PROFILES & IDENTIFIERS
+// -----------------------------------------------------------------------------
+
+model FacultyProfile {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  fullName      String
+  designation   String
+  qualification String?
+  joiningDate   DateTime?
+  avatarUrl     String?
+  bio           String?
+
+  openAlexId     String? @unique
+  orcid          String? @unique
+  scopusAuthorId String? @unique
+  vidwanId       String? @unique
+  googleScholar  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorships PublicationAuthor[]
+
+  @@index([fullName])
+  @@index([departmentId])
+  @@index([openAlexId])
+  @@index([orcid])
+}
+
+// -----------------------------------------------------------------------------
+// PUBLICATIONS & WORKS (OpenAlex & Scraped)
+// -----------------------------------------------------------------------------
+
+model Publication {
+  id              String  @id @default(uuid())
+  title           String
+  publicationYear Int
+  doi             String? @unique
+  openAlexId      String? @unique
+  journalName     String?
+  publisher       String?
+  volume          String?
+  issue           String?
+  pages           String?
+  citationCount   Int     @default(0)
+  isOpenAccess    Boolean @default(false)
+  openAccessUrl   String?
+  landingPageUrl  String?
+  abstract        String?
+
+  status      PublicationStatus @default(PENDING_APPROVAL)
+  rawMetadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authors      PublicationAuthor[]
+  naacMappings NaacPublicationMapping[]
+
+  @@index([title])
+  @@index([publicationYear])
+  @@index([status])
+  @@index([openAlexId])
+  @@index([doi])
+}
+
+model PublicationAuthor {
+  id               String         @id @default(uuid())
+  publicationId    String
+  publication      Publication    @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  facultyProfileId String
+  facultyProfile   FacultyProfile @relation(fields: [facultyProfileId], references: [id], onDelete: Cascade)
+
+  authorPosition  Int     @default(1)
+  isCorresponding Boolean @default(false)
+
+  @@unique([publicationId, facultyProfileId])
+  @@index([facultyProfileId])
+  @@index([publicationId])
+}
+
+// -----------------------------------------------------------------------------
+// NAAC CRITERIA & REPORTING
+// -----------------------------------------------------------------------------
+
+model NaacCriterion {
+  id          String @id @default(uuid())
+  code        String @unique
+  category    String
+  description String
+
+  mappings NaacPublicationMapping[]
+}
+
+model NaacPublicationMapping {
+  id             String        @id @default(uuid())
+  publicationId  String
+  publication    Publication   @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  criterionId    String
+  criterion      NaacCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+  academicYear   String
+  verifiedByIQAC Boolean       @default(false)
+
+  @@unique([publicationId, criterionId, academicYear])
+  @@index([criterionId, academicYear])
+}
+
+model NaacReport {
+  id           String     @id @default(uuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  academicYear String
+  reportType   String
+  fileUrl      String?
+  generatedAt  DateTime   @default(now())
+
+  @@index([universityId, academicYear])
+}
+
+// -----------------------------------------------------------------------------
+// BACKGROUND JOBS & AUDIT LOGS
+// -----------------------------------------------------------------------------
+
+model BackgroundTask {
+  id           String     @id @default(uuid())
+  taskType     TaskType
+  status       TaskStatus @default(QUEUED)
+  payload      Json?
+  result       Json?
+  errorMessage String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@index([taskType, status])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}
