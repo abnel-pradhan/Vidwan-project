@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { getAdminDashboardData, updatePublicationStatus } from '@/app/actions/admin';
+import { NAACExportButton } from '@/components/admin/NAACExportDropdown';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState(null);
@@ -44,17 +45,22 @@ export default function AdminDashboardPage() {
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
-        <div className="flex justify-between items-center border-b border-slate-800 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">Vidyawan Admin & IQAC Portal</h1>
             <p className="text-slate-400 text-sm mt-1">Monitor ingestion pipelines, pending approvals, and system audit trails.</p>
           </div>
-          <a
-            href="/faculty"
-            className="rounded-lg bg-cyan-600 px-4 py-2 text-xs font-semibold text-white hover:bg-cyan-500 transition"
-          >
-            + Ingest New Papers
-          </a>
+          
+          {/* Header Action Buttons */}
+          <div className="flex items-center gap-3">
+            <NAACExportButton />
+            <a
+              href="/faculty"
+              className="rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-cyan-500 transition inline-flex items-center"
+            >
+              + Ingest New Papers
+            </a>
+          </div>
         </div>
 
         {/* Top Metric Cards */}
