@@ -1,16 +1,29 @@
+// src/app/admin/page.js
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { getAdminDashboardData, updatePublicationStatus } from '@/app/actions/admin';
 import { NAACExportButton } from '@/components/admin/NAACExportDropdown';
+import { Filter, RefreshCw } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState('all');
 
-  async function loadData() {
+  const academicYears = [
+    { label: 'All Academic Years', value: 'all' },
+    { label: '2026', value: '2026' },
+    { label: '2025', value: '2025' },
+    { label: '2024', value: '2024' },
+    { label: '2023', value: '2023' },
+    { label: '2022', value: '2022' },
+  ];
+
+  async function loadData(dept = selectedDepartment, year = selectedAcademicYear) {
     setLoading(true);
-    const res = await getAdminDashboardData();
+    const res = await getAdminDashboardData({ departmentId: dept, academicYear: year });
     if (res.success) {
       setData(res);
     }
@@ -18,27 +31,19 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    loadData();
-  }, []);
+    loadData(selectedDepartment, selectedAcademicYear);
+  }, [selectedDepartment, selectedAcademicYear]);
 
   async function handleStatusChange(id, newStatus) {
     const res = await updatePublicationStatus(id, newStatus);
     if (res.success) {
-      loadData();
+      loadData(selectedDepartment, selectedAcademicYear);
     } else {
       alert('Action failed: ' + res.error);
     }
   }
 
-  if (loading && !data) {
-    return (
-      <div className="min-h-screen bg-[#030712] text-slate-100 p-8 flex items-center justify-center">
-        <p className="text-cyan-400 animate-pulse">Loading Admin Dashboard...</p>
-      </div>
-    );
-  }
-
-  const { metrics, pendingList, recentLogs } = data || {};
+  const { metrics, pendingList, recentLogs, departments = [] } = data || {};
 
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 p-8">
@@ -51,15 +56,77 @@ export default function AdminDashboardPage() {
             <p className="text-slate-400 text-sm mt-1">Monitor ingestion pipelines, pending approvals, and system audit trails.</p>
           </div>
           
-          {/* Header Action Buttons */}
           <div className="flex items-center gap-3">
-            <NAACExportButton />
+            {/* Dynamic Export Button linked to current filters */}
+            <NAACExportButton 
+              departmentId={selectedDepartment} 
+              academicYear={selectedAcademicYear} 
+            />
             <a
               href="/faculty"
               className="rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-cyan-500 transition inline-flex items-center"
             >
               + Ingest New Papers
             </a>
+          </div>
+        </div>
+
+        {/* Dynamic Filters Bar */}
+        <div className="rounded-xl border border-slate-800 bg-[#0a0f1a] p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <Filter className="w-4 h-4 text-cyan-400" />
+              <span>Filters:</span>
+            </div>
+
+            {/* Department Dropdown */}
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+            >
+              <option value="all">All Departments</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Academic Year Dropdown */}
+            <select
+              value={selectedAcademicYear}
+              onChange={(e) => setSelectedAcademicYear(e.target.value)}
+              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 cursor-pointer"
+            >
+              {academicYears.map((yr) => (
+                <option key={yr.value} value={yr.value}>
+                  {yr.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reset / Reload Filter indicator */}
+          <div className="flex items-center gap-2">
+            {(selectedDepartment !== 'all' || selectedAcademicYear !== 'all') && (
+              <button
+                onClick={() => {
+                  setSelectedDepartment('all');
+                  setSelectedAcademicYear('all');
+                }}
+                className="text-xs text-rose-400 hover:text-rose-300 transition"
+              >
+                Reset Filters
+              </button>
+            )}
+            <button
+              onClick={() => loadData(selectedDepartment, selectedAcademicYear)}
+              className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-cyan-400' : ''}`} />
+            </button>
           </div>
         </div>
 
@@ -91,7 +158,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {pendingList?.length === 0 ? (
-            <p className="text-sm text-slate-500 py-4">No publications currently awaiting approval.</p>
+            <p className="text-sm text-slate-500 py-4">No publications currently awaiting approval for this filter criteria.</p>
           ) : (
             <div className="divide-y divide-slate-800/80">
               {pendingList?.map((paper) => (
@@ -99,9 +166,11 @@ export default function AdminDashboardPage() {
                   <div className="space-y-1 max-w-3xl">
                     <h3 className="text-sm font-semibold text-slate-200">{paper.title}</h3>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                      <span>Author: {paper.faculty?.name || 'Unknown'}</span>
+                      {paper.faculty?.department?.name && <span>Dept: {paper.faculty.department.name}</span>}
                       <span>Year: {paper.publicationYear}</span>
                       {paper.journalName && <span>Journal: {paper.journalName}</span>}
-                      <span>Citations: {paper.citationCount}</span>
+                      <span>Citations: {paper.citationCount || 0}</span>
                       {paper.doi && (
                         <a href={paper.doi} target="_blank" rel="noreferrer" className="text-cyan-500 hover:underline">
                           DOI ↗

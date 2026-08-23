@@ -1,30 +1,74 @@
+// src/app/actions/admin.js
 'use server';
 
 import { prisma } from '@/app/lib/prisma';
-import { revalidatePath } from 'next/cache';
 
-/**
- * Fetches high-level metrics and lists for the Admin Dashboard.
- */
-export async function getAdminDashboardData() {
+export async function getAdminDashboardData(filters = {}) {
   try {
-    const [totalPapers, pendingPapersCount, approvedPapersCount, pendingList, recentLogs] = await Promise.all([
-      prisma.publication.count(),
-      prisma.publication.count({ where: { status: 'PENDING_APPROVAL' } }),
-      prisma.publication.count({ where: { status: 'APPROVED' } }),
-      prisma.publication.findMany({
-        where: { status: 'PENDING_APPROVAL' },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-      prisma.activityLog.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 8,
-      }),
-    ]);
+    const { departmentId = 'all', academicYear = 'all' } = filters;
+
+    const publicationWhere = {};
+
+    if (academicYear && academicYear !== 'all') {
+      publicationWhere.publicationYear = parseInt(academicYear, 10) || undefined;
+    }
+
+    if (departmentId && departmentId !== 'all') {
+      publicationWhere.authors = {
+        some: {
+          facultyProfile: {
+            departmentId: departmentId,
+          },
+        },
+      };
+    }
+
+    // Fetch departments
+    const departments = await prisma.department.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    // Counts
+    const totalPapers = await prisma.publication.count({
+      where: publicationWhere,
+    });
+
+    const pendingPapersCount = await prisma.publication.count({
+      where: { ...publicationWhere, status: 'PENDING' },
+    });
+
+    const approvedPapersCount = await prisma.publication.count({
+      where: { ...publicationWhere, status: 'APPROVED' },
+    });
+
+    // Pending list with facultyProfile relation
+    const pendingList = await prisma.publication.findMany({
+      where: { ...publicationWhere, status: 'PENDING' },
+      include: {
+        authors: {
+          include: {
+            facultyProfile: {
+              include: { department: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    // Recent logs
+    const recentLogs = await prisma.systemLog
+      ? await prisma.systemLog.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        })
+      : [];
 
     return {
       success: true,
+      departments,
       metrics: {
         totalPapers,
         pendingPapersCount,
@@ -40,29 +84,25 @@ export async function getAdminDashboardData() {
   }
 }
 
-/**
- * Approves or rejects a publication and creates an audit log entry.
- */
-export async function updatePublicationStatus(publicationId, status) {
+export async function updatePublicationStatus(id, status) {
   try {
-    const publication = await prisma.publication.update({
-      where: { id: publicationId },
+    const updated = await prisma.publication.update({
+      where: { id },
       data: { status },
     });
 
-    await prisma.activityLog.create({
-      data: {
-        action: status === 'APPROVED' ? 'PAPER_APPROVED_NAAC' : 'PAPER_REJECTED',
-        details: {
-          publicationId: publication.id,
-          title: publication.title,
-          status,
-        },
-      },
-    });
+    try {
+      if (prisma.systemLog) {
+        await prisma.systemLog.create({
+          data: {
+            action: status === 'APPROVED' ? 'PAPER_APPROVED_NAAC' : 'PAPER_REJECTED',
+            details: { title: updated.title, id: updated.id },
+          },
+        });
+      }
+    } catch (_) {}
 
-    revalidatePath('/admin');
-    return { success: true, publication };
+    return { success: true, publication: updated };
   } catch (error) {
     console.error('Error updating status:', error);
     return { success: false, error: error.message };

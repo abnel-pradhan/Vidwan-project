@@ -12,54 +12,66 @@ export async function GET(req: NextRequest) {
 
     // 1. Build query filter
     const whereClause: any = {
-      isApproved: true,
+      status: 'APPROVED',
     };
 
-    if (departmentId && departmentId !== 'all') {
-      whereClause.facultyId = departmentId; // or whereClause.departmentId = departmentId
-    }
-
     if (academicYear && academicYear !== 'all') {
-      whereClause.academicYear = academicYear;
+      const yearNum = parseInt(academicYear, 10);
+      if (!isNaN(yearNum)) {
+        whereClause.publicationYear = yearNum;
+      }
     }
 
-    // 2. Fetch publications from database
-    // Adjust 'faculty' / 'author' and 'publishedYear' / 'year' to match your schema
+    if (departmentId && departmentId !== 'all') {
+      whereClause.authors = {
+        some: {
+          facultyProfile: {
+            departmentId: departmentId,
+          },
+        },
+      };
+    }
+
+    // 2. Fetch publications with facultyProfile relation
     const publications = await (prisma.publication as any).findMany({
       where: whereClause,
       include: {
-        faculty: {
-          select: {
-            name: true,
-            department: {
-              select: { name: true },
+        authors: {
+          include: {
+            facultyProfile: {
+              include: {
+                department: true,
+              },
             },
           },
         },
+        naacMappings: true,
+      },
+      orderBy: {
+        publicationYear: 'desc',
       },
     });
 
-    // 3. Create Excel Workbook and Sheet
+    // 3. Create Excel Workbook
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Vidyawan IQAC Automation';
     workbook.created = new Date();
 
-    // Fix: Note capital 'W' in addWorksheet
     const worksheet = workbook.addWorksheet('NAAC Criteria 3.4');
 
     // 4. Define Standard NAAC 3.4 Columns
     worksheet.columns = [
       { header: 'Sl. No.', key: 'slNo', width: 8 },
-      { header: 'Title of Paper', key: 'title', width: 40 },
+      { header: 'Title of Paper', key: 'title', width: 42 },
       { header: 'Name of the Author(s)', key: 'authors', width: 28 },
       { header: 'Department', key: 'department', width: 24 },
       { header: 'Name of Journal', key: 'journalName', width: 30 },
       { header: 'Year of Publication', key: 'year', width: 15 },
-      { header: 'ISSN Number', key: 'issn', width: 18 },
-      { header: 'DOI / Document Link', key: 'doi', width: 35 },
-      { header: 'Indexing Status (UGC-CARE / Scopus)', key: 'indexing', width: 30 },
-      { header: 'Link to Journal Website', key: 'journalUrl', width: 35 },
-      { header: 'Link to Article / Paper', key: 'articleUrl', width: 35 },
+      { header: 'Publisher', key: 'publisher', width: 22 },
+      { header: 'DOI / Link', key: 'doi', width: 35 },
+      { header: 'Open Access Status', key: 'openAccess', width: 20 },
+      { header: 'Citations', key: 'citations', width: 12 },
+      { header: 'Link to Landing Page', key: 'landingPageUrl', width: 35 },
     ];
 
     // 5. Header Styling
@@ -68,25 +80,40 @@ export async function GET(req: NextRequest) {
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FF1E293B' }, // Slate-800
+      fgColor: { argb: 'FF1E293B' },
     };
     headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
     headerRow.height = 26;
 
-    // 6. Add Data Rows
+    // 6. Data Rows
     publications.forEach((pub: any, index: number) => {
+      let authorNames = 'N/A';
+      let deptNames = 'N/A';
+
+      if (Array.isArray(pub.authors) && pub.authors.length > 0) {
+        const names = pub.authors
+          .map((a: any) => a.facultyProfile?.name || a.authorName || a.name)
+          .filter(Boolean);
+        if (names.length > 0) authorNames = names.join(', ');
+
+        const depts = pub.authors
+          .map((a: any) => a.facultyProfile?.department?.name)
+          .filter(Boolean);
+        if (depts.length > 0) deptNames = [...new Set(depts)].join(', ');
+      }
+
       const row = worksheet.addRow({
         slNo: index + 1,
-        title: pub.title,
-        authors: Array.isArray(pub.authors) ? pub.authors.join(', ') : (pub.faculty?.name || pub.author?.name || 'N/A'),
-        department: pub.faculty?.department?.name || pub.department?.name || 'N/A',
-        journalName: pub.journalName || pub.journal || 'N/A',
-        year: pub.publishedYear || pub.year || pub.publicationYear || 'N/A',
-        issn: pub.issn || 'N/A',
-        doi: pub.doi ? `https://doi.org/${pub.doi}` : 'N/A',
-        indexing: pub.indexingStatus || (pub.isUgcCare ? 'UGC-CARE' : pub.isScopus ? 'Scopus' : 'Peer Reviewed'),
-        journalUrl: pub.journalUrl || 'N/A',
-        articleUrl: pub.doi ? `https://doi.org/${pub.doi}` : (pub.openAlexId || 'N/A'),
+        title: pub.title || 'Untitled',
+        authors: authorNames,
+        department: deptNames,
+        journalName: pub.journalName || 'N/A',
+        year: pub.publicationYear || 'N/A',
+        publisher: pub.publisher || 'N/A',
+        doi: pub.doi ? (pub.doi.startsWith('http') ? pub.doi : `https://doi.org/${pub.doi}`) : 'N/A',
+        openAccess: pub.isOpenAccess ? 'Open Access' : 'Closed',
+        citations: pub.citationCount || 0,
+        landingPageUrl: pub.landingPageUrl || pub.openAccessUrl || (pub.doi ? `https://doi.org/${pub.doi}` : 'N/A'),
       });
 
       row.alignment = { vertical: 'middle', wrapText: true };
@@ -94,13 +121,13 @@ export async function GET(req: NextRequest) {
 
     const timestamp = new Date().toISOString().split('T')[0];
 
-    // 7. Return CSV or XLSX file
+    // 7. Output based on format
     if (format === 'csv') {
       const csvBuffer = await workbook.csv.writeBuffer();
       return new NextResponse(csvBuffer as any, {
         status: 200,
         headers: {
-          'Content-Type': 'text/csv',
+          'Content-Type': 'text/csv; charset=utf-8',
           'Content-Disposition': `attachment; filename="NAAC_Criteria_3.4_${timestamp}.csv"`,
         },
       });
@@ -114,10 +141,10 @@ export async function GET(req: NextRequest) {
         'Content-Disposition': `attachment; filename="NAAC_SSR_AQAR_3_4_${timestamp}.xlsx"`,
       },
     });
-  } catch (error) {
-    console.error('Export Error:', error);
+  } catch (error: any) {
+    console.error('Export Error in route:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to generate NAAC export' },
+      { success: false, error: error?.message || 'Failed to generate export' },
       { status: 500 }
     );
   }
