@@ -89,3 +89,9 @@ async def fetch_openalex_data(faculty_id: str, orcid_id: str):
         print(f"--> [DATABASE ERROR] {e}")
     finally:
         await conn.close()
+
+@app.post("/api/sync/openalex", dependencies=[Security(verify_token)])
+async def trigger_openalex_sync(payload: SyncRequest, background_tasks: BackgroundTasks):
+    """Endpoint triggered by Next.js to start the sync process."""
+    background_tasks.add_task(fetch_openalex_data, payload.faculty_id, payload.orcid_id)
+    return {"status": "processing", "message": "Database sync queued."}
