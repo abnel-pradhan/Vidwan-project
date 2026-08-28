@@ -40,7 +40,7 @@ export default function CollegeDashboard() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-900/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[20%] right-[-5%] w-[30%] h-[40%] rounded-full bg-blue-900/10 blur-[100px] pointer-events-none" />
 
-      {/* Glassmorphism Top Navigation */}
+      {/* Glassmorphism Top Navigation (Exclusive to Home Page) */}
       <nav className="relative z-50 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black text-white tracking-tighter">
@@ -48,14 +48,14 @@ export default function CollegeDashboard() {
           </span>
         </div>
 
-        {/* Desktop Navigation (Unified UX) */}
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
           <span className="text-cyan-400 cursor-pointer">Home</span>
           <a href="/faculty" className="hover:text-white transition cursor-pointer">Faculty Directory</a>
           <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
           <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
           
-          <a href="/login" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
+          <a href="/auth/signin" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
             Sign In <span className="text-cyan-500">→</span>
           </a>
           
@@ -79,7 +79,7 @@ export default function CollegeDashboard() {
         </button>
       </nav>
 
-      {/* Mobile Dropdown Menu Panel (Unified UX) */}
+      {/* Mobile Dropdown Menu Panel */}
       {isMobileMenuOpen && (
         <div className="md:hidden relative z-40 bg-[#070a13]/95 backdrop-blur-xl border-b border-slate-800">
           <div className="flex flex-col px-8 py-6 space-y-4 text-sm font-medium text-slate-400">
@@ -88,7 +88,7 @@ export default function CollegeDashboard() {
             <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
             <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
             
-            <a href="/login" className="text-white font-bold hover:text-cyan-400 transition cursor-pointer">
+            <a href="/auth/signin" className="text-white font-bold hover:text-cyan-400 transition cursor-pointer">
               Sign In →
             </a>
             
@@ -128,7 +128,6 @@ export default function CollegeDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Box 1 */}
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-cyan-950/50 border border-cyan-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <span className="text-2xl font-black text-cyan-400">{data.metrics.facultyCount}</span>
@@ -137,7 +136,6 @@ export default function CollegeDashboard() {
               <p className="text-sm text-slate-500">Verified academic profiles within the system.</p>
             </div>
 
-            {/* Box 2 */}
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-blue-950/50 border border-blue-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                  <span className="text-2xl font-black text-blue-400">{data.metrics.publications}</span>
@@ -146,7 +144,6 @@ export default function CollegeDashboard() {
               <p className="text-sm text-slate-500">Scraped and verified scholarly resources.</p>
             </div>
 
-            {/* Box 3 */}
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-cyan-950/50 border border-cyan-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                  <span className="text-2xl font-black text-cyan-400">{data.metrics.citations}</span>
@@ -155,7 +152,6 @@ export default function CollegeDashboard() {
               <p className="text-sm text-slate-500">Public, accountable research reach.</p>
             </div>
 
-            {/* Box 4 */}
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-blue-950/50 border border-blue-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                  <span className="text-2xl font-black text-blue-400">{data.metrics.patents}</span>

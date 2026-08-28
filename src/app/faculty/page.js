@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { searchOpenAlexAuthor, fetchFacultyPapers } from '@/app/actions/openalex';
 import { savePublicationToDatabase } from '@/app/actions/publications';
 import { PublicationCard } from '@/components/PublicationCard';
+import toast from 'react-hot-toast';
 
 export default function FacultySearchPage() {
   const [query, setQuery] = useState('');
@@ -53,9 +54,11 @@ export default function FacultySearchPage() {
   async function handleApprove(paper) {
     const res = await savePublicationToDatabase(paper);
     if (res.success) {
-      alert(`Saved "${paper.title}" to PostgreSQL database!`);
+      // Replace the alert with a success toast
+      toast.success(`Saved "${paper.title}" to database!`);
     } else {
-      alert('Failed to save paper: ' + res.error);
+      // Replace the alert with an error toast
+      toast.error('Failed to save paper: ' + res.error);
     }
   }
 
@@ -142,10 +145,12 @@ export default function FacultySearchPage() {
             </div>
             <div className="flex items-center gap-3">
               <a
-                href={`/faculty/${selectedAuthor.id.replace('https://openalex.org/', '')}`}
+                href={selectedAuthor.id}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-lg bg-cyan-600/20 border border-cyan-500/40 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-600 hover:text-white transition"
               >
-                View Full Portfolio Page →
+                View OpenAlex Profile ↗
               </a>
               <button
                 onClick={() => setSelectedAuthor(null)}
