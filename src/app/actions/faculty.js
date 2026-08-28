@@ -1,67 +1,55 @@
 'use server';
 
+// Using your existing global Prisma connection!
 import { prisma } from '@/app/lib/prisma';
-import { fetchFacultyPapers } from '@/app/actions/openalex';
 
-/**
- * Retrieves a faculty member's profile and approved publications.
- */
 export async function getFacultyProfileData(rawAuthorId) {
   try {
     if (!rawAuthorId) {
       return { success: false, error: 'No author ID was provided.' };
     }
 
-    const cleanId = String(rawAuthorId).replace('https://openalex.org/', '').trim();
-    const fullOpenAlexUrl = `https://openalex.org/${cleanId}`;
+    const facultyId = String(rawAuthorId).trim();
 
-    // 1. Fetch approved publications from local PostgreSQL
-    const pubModel = prisma?.publication || prisma?.Publication;
-    let approvedPublications = [];
-    let pendingCount = 0;
+    // 1. Fetch the Faculty Profile (to verify existence and get ORCID)
+    const profile = await prisma.facultyProfile.findUnique({
+      where: { id: facultyId }
+    });
 
-    if (pubModel) {
-      approvedPublications = await pubModel.findMany({
-        where: {
-          openAlexId: { in: [cleanId, fullOpenAlexUrl] },
-          status: 'APPROVED',
-        },
-        orderBy: { publicationYear: 'desc' },
-      });
-
-      pendingCount = await pubModel.count({
-        where: {
-          openAlexId: { in: [cleanId, fullOpenAlexUrl] },
-          status: 'PENDING_APPROVAL',
-        },
-      });
+    if (!profile) {
+      return { success: false, error: 'Faculty profile not found.' };
     }
 
-    // 2. Fetch live OpenAlex author metadata and all papers
-    const openAlexData = await fetchFacultyPapers(cleanId);
-    const papersList = openAlexData?.papers || [];
+    // 2. Fetch all linked publications through the PublicationAuthor join table
+    const authorLinks = await prisma.publicationAuthor.findMany({
+      where: { facultyProfileId: facultyId },
+      include: { 
+        publication: true // This automatically joins all the paper data
+      }
+    });
 
-    // Calculate aggregated metrics
-    const totalCitations = papersList.reduce(
-      (acc, paper) => acc + (paper.citationCount || 0),
-      0
-    );
-    const openAccessCount = papersList.filter(
-      (paper) => paper.isOpenAccess
-    ).length;
+    // 3. Extract the actual publication records from the join results
+    const allPapers = authorLinks.map(link => link.publication);
+    const approvedPublications = allPapers.filter(p => p.status === 'APPROVED');
+    const pendingCount = allPapers.length - approvedPublications.length;
+
+    // 4. Calculate metrics directly from our synced PostgreSQL data
+    const totalCitations = allPapers.reduce((acc, p) => acc + (p.citationCount || 0), 0);
+    const openAccessCount = allPapers.filter(p => p.isOpenAccess).length;
 
     return {
       success: true,
-      authorId: cleanId,
+      authorId: facultyId,
+      profile: profile,
       metrics: {
-        totalWorks: openAlexData?.count || papersList.length,
-        totalCitations,
-        openAccessCount,
+        totalWorks: allPapers.length,
+        totalCitations: totalCitations,
+        openAccessCount: openAccessCount,
         approvedForNaacCount: approvedPublications.length,
-        pendingCount,
+        pendingCount: pendingCount,
       },
       approvedPublications,
-      allPapers: papersList,
+      allPapers,
     };
   } catch (error) {
     console.error('Error loading faculty profile:', error);

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import React from 'react';
 import { getFacultyProfileData } from '@/app/actions/faculty';
 import { PublicationCard } from '@/components/PublicationCard';
