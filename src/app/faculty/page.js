@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { searchOpenAlexAuthor, fetchFacultyPapers } from '@/app/actions/openalex';
 import { savePublicationToDatabase } from '@/app/actions/publications';
 import { PublicationCard } from '@/components/PublicationCard';
@@ -59,22 +60,35 @@ export default function FacultySearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 p-8">
+    <div className="min-h-screen bg-[#030712] text-slate-100 p-8 pt-12">
       <div className="max-w-5xl mx-auto">
         
-        {/* Header */}
-        <header className="mb-8 flex justify-between items-center border-b border-slate-800 pb-5">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Faculty Publication Ingestion</h1>
-            <p className="text-slate-400 text-sm mt-1">Search faculty profiles via OpenAlex and import verified research papers.</p>
-          </div>
-          <a
-            href="/admin"
-            className="rounded-lg border border-slate-700 bg-slate-800/60 px-4 py-2 text-xs font-semibold text-slate-300 hover:border-cyan-500 hover:text-white transition"
+        {/* NEW: Top Navigation Row */}
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-8">
+          <Link 
+            href="/" 
+            className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition flex items-center gap-2"
+          >
+            <span className="text-lg leading-none mb-[2px]">←</span> Back to Home
+          </Link>
+          
+          <Link 
+            href="/admin" 
+            className="rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-2 text-xs font-semibold text-slate-300 hover:border-cyan-500 hover:text-white transition"
           >
             Admin Portal →
-          </a>
-        </header>
+          </Link>
+        </div>
+
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2">
+            Faculty Publication Ingestion
+          </h1>
+          <p className="text-sm text-slate-400">
+            Search faculty profiles via OpenAlex and import verified research papers.
+          </p>
+        </div>
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="flex gap-3 mb-8">
@@ -118,7 +132,7 @@ export default function FacultySearchPage() {
           </div>
         )}
 
-        {/* Selected Author Banner (Protected with selectedAuthor check) */}
+        {/* Selected Author Banner */}
         {selectedAuthor && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-lg border border-cyan-500/30 bg-cyan-950/20 p-4 mb-6">
             <div>

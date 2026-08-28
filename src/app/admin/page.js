@@ -1,7 +1,7 @@
-// src/app/admin/page.js
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getAdminDashboardData, updatePublicationStatus } from '@/app/actions/admin';
 import { NAACExportButton } from '@/components/admin/NAACExportDropdown';
 import { Filter, RefreshCw } from 'lucide-react';
@@ -46,11 +46,28 @@ export default function AdminDashboardPage() {
   const { metrics, pendingList, recentLogs, departments = [] } = data || {};
 
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 p-8">
+    <div className="min-h-screen bg-[#030712] text-slate-100 p-8 pt-12">
       <div className="max-w-6xl mx-auto space-y-8">
         
+        {/* NEW: Top Navigation Row */}
+        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+          <Link 
+            href="/" 
+            className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition flex items-center gap-2"
+          >
+            <span className="text-lg leading-none mb-[2px]">←</span> Back to Home
+          </Link>
+          
+          <Link 
+            href="/faculty" 
+            className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition"
+          >
+            Faculty Directory →
+          </Link>
+        </div>
+
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">Vidyawan Admin & IQAC Portal</h1>
             <p className="text-slate-400 text-sm mt-1">Monitor ingestion pipelines, pending approvals, and system audit trails.</p>
@@ -62,12 +79,12 @@ export default function AdminDashboardPage() {
               departmentId={selectedDepartment} 
               academicYear={selectedAcademicYear} 
             />
-            <a
+            <Link
               href="/faculty"
               className="rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-cyan-500 transition inline-flex items-center"
             >
               + Ingest New Papers
-            </a>
+            </Link>
           </div>
         </div>
 
