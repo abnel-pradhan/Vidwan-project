@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getAdminDashboardData, updatePublicationStatus } from '@/app/actions/admin';
 import { NAACExportButton } from '@/components/admin/NAACExportDropdown';
 import { Filter, RefreshCw } from 'lucide-react';
+import { logoutAdmin } from '@/app/actions/auth';
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState(null);
@@ -49,7 +50,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-[#030712] text-slate-100 p-8 pt-12">
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* NEW: Top Navigation Row */}
+        {/* NEW: Top Navigation Row with Sign Out */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
           <Link 
             href="/" 
@@ -58,12 +59,24 @@ export default function AdminDashboardPage() {
             <span className="text-lg leading-none mb-[2px]">←</span> Back to Home
           </Link>
           
-          <Link 
-            href="/faculty" 
-            className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition"
-          >
-            Faculty Directory →
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link 
+              href="/faculty" 
+              className="text-sm font-medium text-slate-400 hover:text-cyan-400 transition"
+            >
+              Faculty Directory →
+            </Link>
+            
+            {/* Sign Out Button Form */}
+            <form action={logoutAdmin}>
+              <button 
+                type="submit" 
+                className="rounded-lg bg-red-900/20 border border-red-500/30 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-600 hover:text-white transition shadow-[0_0_10px_rgba(220,38,38,0.2)]"
+              >
+                Sign Out
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Header */}
@@ -74,7 +87,6 @@ export default function AdminDashboardPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Dynamic Export Button linked to current filters */}
             <NAACExportButton 
               departmentId={selectedDepartment} 
               academicYear={selectedAcademicYear} 
@@ -96,7 +108,6 @@ export default function AdminDashboardPage() {
               <span>Filters:</span>
             </div>
 
-            {/* Department Dropdown */}
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
@@ -110,7 +121,6 @@ export default function AdminDashboardPage() {
               ))}
             </select>
 
-            {/* Academic Year Dropdown */}
             <select
               value={selectedAcademicYear}
               onChange={(e) => setSelectedAcademicYear(e.target.value)}
@@ -124,7 +134,6 @@ export default function AdminDashboardPage() {
             </select>
           </div>
 
-          {/* Reset / Reload Filter indicator */}
           <div className="flex items-center gap-2">
             {(selectedDepartment !== 'all' || selectedAcademicYear !== 'all') && (
               <button
