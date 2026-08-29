@@ -1,18 +1,32 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getLiveMetrics } from "@/app/actions/metrics";
 
 export default function CollegeDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const collegeName = "Alpine"; 
 
+  // Initialize with your placeholder numbers, which will instantly swap to live data
+  const [liveStats, setLiveStats] = useState({
+    facultyCount: 91,
+    publications: 625,
+    patents: 88,
+    citations: 1406,
+  });
+
+  // Fetch real database metrics on page load
+  useEffect(() => {
+    async function fetchStats() {
+      const liveData = await getLiveMetrics();
+      if (liveData) {
+        setLiveStats(liveData);
+      }
+    }
+    fetchStats();
+  }, []);
+
   const data = {
     institution: `${collegeName} University`,
-    metrics: {
-      facultyCount: 91,
-      publications: 625,
-      patents: 88,
-      citations: 1406,
-    },
     topPapers: [
       {
         title: "A Novel Strategy for Waste Prediction Using Machine Learning",
@@ -32,7 +46,6 @@ export default function CollegeDashboard() {
       { name: "Electronics & Comm.", faculty: 20 }
     ]
   };
-
   return (
     <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden selection:bg-cyan-500/30">
       
@@ -120,7 +133,7 @@ export default function CollegeDashboard() {
           </div>
         </section>
 
-        {/* 4-COLUMN STATS GRID */}
+       {/* 4-COLUMN STATS GRID */}
         <section className="mb-32">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-white mb-4">Why <span className="text-cyan-400">Our Portal?</span></h2>
@@ -130,7 +143,7 @@ export default function CollegeDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-cyan-950/50 border border-cyan-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-black text-cyan-400">{data.metrics.facultyCount}</span>
+                <span className="text-2xl font-black text-cyan-400">{liveStats.facultyCount}</span>
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Total Faculty</h3>
               <p className="text-sm text-slate-500">Verified academic profiles within the system.</p>
@@ -138,7 +151,7 @@ export default function CollegeDashboard() {
 
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-blue-950/50 border border-blue-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                 <span className="text-2xl font-black text-blue-400">{data.metrics.publications}</span>
+                 <span className="text-2xl font-black text-blue-400">{liveStats.publications}</span>
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Publications</h3>
               <p className="text-sm text-slate-500">Scraped and verified scholarly resources.</p>
@@ -146,7 +159,7 @@ export default function CollegeDashboard() {
 
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-cyan-950/50 border border-cyan-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                 <span className="text-2xl font-black text-cyan-400">{data.metrics.citations}</span>
+                 <span className="text-2xl font-black text-cyan-400">{liveStats.citations}</span>
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Citations</h3>
               <p className="text-sm text-slate-500">Public, accountable research reach.</p>
@@ -154,7 +167,7 @@ export default function CollegeDashboard() {
 
             <div className="bg-[#0b101e]/80 border border-slate-800 hover:border-cyan-500/50 p-8 rounded-2xl backdrop-blur-sm transition-all group hover:shadow-[0_0_30px_rgba(8,145,178,0.15)] text-center">
               <div className="w-14 h-14 mx-auto bg-blue-950/50 border border-blue-800 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                 <span className="text-2xl font-black text-blue-400">{data.metrics.patents}</span>
+                 <span className="text-2xl font-black text-blue-400">{liveStats.patents}</span>
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Patents</h3>
               <p className="text-sm text-slate-500">Registered intellectual property output.</p>

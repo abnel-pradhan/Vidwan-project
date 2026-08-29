@@ -1,58 +1,32 @@
 'use server';
 
-// Using your existing global Prisma connection!
 import { prisma } from '@/app/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
-export async function getFacultyProfileData(rawAuthorId) {
+export async function getDepartments() {
   try {
-    if (!rawAuthorId) {
-      return { success: false, error: 'No author ID was provided.' };
-    }
+    return await prisma.department.findMany();
+  } catch (error) {
+    return [];
+  }
+}
 
-    const facultyId = String(rawAuthorId).trim();
-
-    // 1. Fetch the Faculty Profile (to verify existence and get ORCID)
-    const profile = await prisma.facultyProfile.findUnique({
-      where: { id: facultyId }
-    });
-
-    if (!profile) {
-      return { success: false, error: 'Faculty profile not found.' };
-    }
-
-    // 2. Fetch all linked publications through the PublicationAuthor join table
-    const authorLinks = await prisma.publicationAuthor.findMany({
-      where: { facultyProfileId: facultyId },
-      include: { 
-        publication: true // This automatically joins all the paper data
+export async function createFacultyProfile(formData) {
+  try {
+    await prisma.facultyProfile.create({
+      data: {
+        name: formData.name,
+        email: formData.email,
+        departmentId: formData.departmentId,
+        // Using ORCID helps the ingestion tool find their papers later!
+        orcid: formData.orcid || null, 
       }
     });
-
-    // 3. Extract the actual publication records from the join results
-    const allPapers = authorLinks.map(link => link.publication);
-    const approvedPublications = allPapers.filter(p => p.status === 'APPROVED');
-    const pendingCount = allPapers.length - approvedPublications.length;
-
-    // 4. Calculate metrics directly from our synced PostgreSQL data
-    const totalCitations = allPapers.reduce((acc, p) => acc + (p.citationCount || 0), 0);
-    const openAccessCount = allPapers.filter(p => p.isOpenAccess).length;
-
-    return {
-      success: true,
-      authorId: facultyId,
-      profile: profile,
-      metrics: {
-        totalWorks: allPapers.length,
-        totalCitations: totalCitations,
-        openAccessCount: openAccessCount,
-        approvedForNaacCount: approvedPublications.length,
-        pendingCount: pendingCount,
-      },
-      approvedPublications,
-      allPapers,
-    };
+    
+    revalidatePath('/admin');
+    return { success: true };
   } catch (error) {
-    console.error('Error loading faculty profile:', error);
-    return { success: false, error: error.message };
+    console.error("Error creating faculty:", error);
+    return { success: false, error: 'Could not save faculty profile. Ensure email is unique.' };
   }
 }

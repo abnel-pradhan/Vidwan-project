@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-[#030712] text-slate-100 p-8 pt-12">
       <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* NEW: Top Navigation Row with Sign Out */}
+        {/* Top Navigation Row with Sign Out */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
           <Link 
             href="/" 
@@ -80,22 +80,32 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <h1 className="text-3xl font-bold text-white tracking-tight">Vidyawan Admin & IQAC Portal</h1>
             <p className="text-slate-400 text-sm mt-1">Monitor ingestion pipelines, pending approvals, and system audit trails.</p>
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <NAACExportButton 
               departmentId={selectedDepartment} 
               academicYear={selectedAcademicYear} 
             />
+            
+            {/* NEW: Register Faculty Button */}
             <Link
-              href="/faculty"
-              className="rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-cyan-500 transition inline-flex items-center"
+              href="/admin/add-faculty"
+              className="rounded-lg bg-slate-800 border border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition inline-flex items-center"
             >
-              + Ingest New Papers
+              + Register Faculty
+            </Link>
+
+            {/* UPDATED: Points to the secure ingest route */}
+            <Link
+              href="/admin/ingest"
+              className="rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-cyan-500 transition inline-flex items-center shadow-[0_0_15px_rgba(8,145,178,0.3)]"
+            >
+              + Ingest Papers
             </Link>
           </div>
         </div>
