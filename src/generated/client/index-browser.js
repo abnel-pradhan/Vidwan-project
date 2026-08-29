@@ -258,6 +258,15 @@ exports.Prisma.ActivityLogScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.AdminUserScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  password: 'password',
+  name: 'name',
+  role: 'role',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -329,7 +338,8 @@ exports.Prisma.ModelName = {
   NaacPublicationMapping: 'NaacPublicationMapping',
   NaacReport: 'NaacReport',
   BackgroundTask: 'BackgroundTask',
-  ActivityLog: 'ActivityLog'
+  ActivityLog: 'ActivityLog',
+  AdminUser: 'AdminUser'
 };
 
 /**

@@ -280,3 +280,12 @@ model ActivityLog {
   @@index([action])
   @@index([createdAt])
 }
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String // Note: In production, you would hash this using bcrypt
+  name      String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+}

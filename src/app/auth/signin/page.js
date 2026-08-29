@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { authenticateAdmin } from '@/app/actions/auth'; // NEW IMPORT
 
 export default function SignInPage() {
   const router = useRouter();
@@ -20,14 +21,17 @@ export default function SignInPage() {
 
     setLoading(true);
     
-    // Simulating authentication (you can plug in NextAuth.js or your backend API here later)
-    setTimeout(() => {
-      setLoading(false);
+    // Call our PostgreSQL backend action
+    const res = await authenticateAdmin(email, password);
+    
+    if (res.success) {
       toast.success('Successfully signed in!');
-      router.push('/admin'); // Redirects to admin or dashboard upon success
-    }, 1000);
+      router.push('/admin'); // Middleware will now let you through!
+    } else {
+      toast.error(res.error);
+      setLoading(false);
+    }
   }
-
   return (
     <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative flex items-center justify-center px-6 overflow-hidden selection:bg-cyan-500/30">
       
