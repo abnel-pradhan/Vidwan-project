@@ -7,23 +7,33 @@ export async function getPublicFacultyDirectory() {
     const faculty = await prisma.facultyProfile.findMany({
       include: {
         department: true,
-        // Only fetch papers that the IQAC/Admin has explicitly approved
-        publications: {
-          where: { status: 'APPROVED' },
-          select: { citationCount: true }
+        // Fetch papers through the PublicationAuthor linking table
+        authorships: {
+          include: {
+            publication: {
+              select: {
+                status: true,
+                citationCount: true
+              }
+            }
+          }
         }
       },
-      orderBy: { name: 'asc' }
+      orderBy: { fullName: 'asc' } // Sorted by the correct column name
     });
 
-    // Calculate the total citations and papers for each professor
     return faculty.map(prof => {
-      const totalPapers = prof.publications.length;
-      const totalCitations = prof.publications.reduce((sum, pub) => sum + (pub.citationCount || 0), 0);
+      // Filter out only the papers that have an 'APPROVED' status
+      const approvedPapers = prof.authorships
+        .map(a => a.publication)
+        .filter(pub => pub.status === 'APPROVED');
+
+      const totalPapers = approvedPapers.length;
+      const totalCitations = approvedPapers.reduce((sum, pub) => sum + (pub.citationCount || 0), 0);
       
       return {
         id: prof.id,
-        name: prof.name,
+        name: prof.fullName, // Map back to 'name' for our UI
         department: prof.department?.name || 'Unassigned',
         totalPapers,
         totalCitations,

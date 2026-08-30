@@ -13,13 +13,19 @@ export async function getDepartments() {
 
 export async function createFacultyProfile(formData) {
   try {
-    await prisma.facultyProfile.create({
+    // We create the User and the linked FacultyProfile simultaneously
+    await prisma.user.create({
       data: {
-        name: formData.name,
         email: formData.email,
-        departmentId: formData.departmentId,
-        // Using ORCID helps the ingestion tool find their papers later!
-        orcid: formData.orcid || null, 
+        role: 'FACULTY', // Assigns them the default role from your ENUM
+        facultyProfile: {
+          create: {
+            fullName: formData.name,       // FIXED: Maps form 'name' to schema 'fullName'
+            designation: 'Professor',      // FIXED: Provides a default required designation
+            departmentId: formData.departmentId,
+            orcid: formData.orcid || null, 
+          }
+        }
       }
     });
     
