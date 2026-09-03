@@ -1,16 +1,22 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { prisma } from '@/app/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
 export async function getFacultyDashboardData() {
   try {
-    // For testing purposes, we will grab the first registered faculty profile. 
-    // Later, this will be tied to the specific user's login session.
-    const profile = await prisma.facultyProfile.findFirst();
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('faculty_session')?.value;
+
+    if (!sessionId) return null; 
+
+    const profile = await prisma.facultyProfile.findUnique({
+      where: { userId: sessionId }
+    });
+    
     if (!profile) return null;
 
-    // 1. Fetch papers waiting for the professor's review
     const pending = await prisma.publication.findMany({
       where: {
         status: 'PENDING_APPROVAL',
@@ -19,7 +25,6 @@ export async function getFacultyDashboardData() {
       orderBy: { createdAt: 'desc' }
     });
 
-    // 2. Fetch papers already confirmed
     const confirmed = await prisma.publication.findMany({
       where: {
         status: 'APPROVED',
