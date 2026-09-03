@@ -4,17 +4,17 @@ import { getLiveMetrics } from "@/app/actions/metrics";
 
 export default function CollegeDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const collegeName = "Alpine"; 
-
-  // Initialize with your placeholder numbers, which will instantly swap to live data
+  
+  // Initialize with empty arrays to prevent mapping errors before the database loads
   const [liveStats, setLiveStats] = useState({
-    facultyCount: 91,
-    publications: 625,
+    facultyCount: 0,
+    publications: 0,
     patents: 88,
-    citations: 1406,
+    citations: 0,
+    topPapers: [],
+    departments: []
   });
 
-  // Fetch real database metrics on page load
   useEffect(() => {
     async function fetchStats() {
       const liveData = await getLiveMetrics();
@@ -25,27 +25,6 @@ export default function CollegeDashboard() {
     fetchStats();
   }, []);
 
-  const data = {
-    institution: `${collegeName} University`,
-    topPapers: [
-      {
-        title: "A Novel Strategy for Waste Prediction Using Machine Learning",
-        authors: "Dr. Ramya K., Uganya G.",
-        citations: 54,
-      },
-      {
-        title: "Deep Learning Architectures for Edge Computer Vision",
-        authors: "Dr. Vigneshwar Mekha",
-        citations: 42,
-      }
-    ],
-    departments: [
-      { name: "Artificial Intelligence", faculty: 8 },
-      { name: "Computer Science", faculty: 23 },
-      { name: "Electrical Engineering", faculty: 8 },
-      { name: "Electronics & Comm.", faculty: 20 }
-    ]
-  };
   return (
     <div className="min-h-screen bg-[#030712] text-slate-300 font-sans relative overflow-hidden selection:bg-cyan-500/30">
       
@@ -53,7 +32,7 @@ export default function CollegeDashboard() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-900/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[20%] right-[-5%] w-[30%] h-[40%] rounded-full bg-blue-900/10 blur-[100px] pointer-events-none" />
 
-      {/* Glassmorphism Top Navigation (Exclusive to Home Page) */}
+      {/* Glassmorphism Top Navigation */}
       <nav className="relative z-50 flex justify-between items-center px-8 py-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black text-white tracking-tighter">
@@ -68,13 +47,13 @@ export default function CollegeDashboard() {
           <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
           <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
           
-          <a href="/auth/signin" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
+          <a href="/login" className="text-white hover:text-cyan-400 font-bold transition cursor-pointer flex items-center gap-2">
             Sign In <span className="text-cyan-500">→</span>
           </a>
           
-          <button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-semibold px-6 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
+          <a href="mailto:admin@university.edu" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-semibold px-6 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
             Contact Admin
-          </button>
+          </a>
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -101,13 +80,13 @@ export default function CollegeDashboard() {
             <a href="/dashboard" className="hover:text-white transition cursor-pointer">Workspace</a>
             <a href="/admin" className="hover:text-white transition cursor-pointer">Admin</a>
             
-            <a href="/auth/signin" className="text-white font-bold hover:text-cyan-400 transition cursor-pointer">
+            <a href="/login" className="text-white font-bold hover:text-cyan-400 transition cursor-pointer">
               Sign In →
             </a>
             
-            <button className="mt-4 w-full bg-slate-900 border border-cyan-900 hover:border-cyan-500 text-white text-sm font-semibold px-6 py-3 rounded-xl transition shadow-[0_0_15px_rgba(8,145,178,0.2)]">
+            <a href="mailto:admin@university.edu" className="text-center mt-4 w-full bg-slate-900 border border-cyan-900 hover:border-cyan-500 text-white text-sm font-semibold px-6 py-3 rounded-xl transition shadow-[0_0_15px_rgba(8,145,178,0.2)]">
               Contact Admin
-            </button>
+            </a>
           </div>
         </div>
       )}
@@ -127,9 +106,9 @@ export default function CollegeDashboard() {
             <a href="/faculty" className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold px-8 py-3.5 rounded-full shadow-[0_0_20px_rgba(8,145,178,0.4)] hover:scale-105 transition-all">
               Explore Faculty
             </a>
-            <button className="bg-slate-900/50 border border-slate-700 hover:border-cyan-500/50 text-white font-semibold px-8 py-3.5 rounded-full transition-all backdrop-blur-sm">
+            <a href="/admin/ingest" className="bg-slate-900/50 border border-slate-700 hover:border-cyan-500/50 text-white font-semibold px-8 py-3.5 rounded-full transition-all backdrop-blur-sm">
               Discover How It Works
-            </button>
+            </a>
           </div>
         </section>
 
@@ -182,22 +161,26 @@ export default function CollegeDashboard() {
             <p className="text-slate-400 leading-relaxed mb-8">
               Our institutional portal is revolutionizing how we handle academic data, tracking, and trust. By eliminating manual data entry and creating a secure, transparent system linked to Scopus and ORCID, we are laying the foundation for a more efficient and fair digital future in academia.
             </p>
-            <button className="bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-6 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
+            <a href="/faculty" className="inline-block bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-6 py-2.5 rounded-full transition shadow-[0_0_15px_rgba(8,145,178,0.4)]">
               Read More
-            </button>
+            </a>
           </div>
           
           <div className="lg:w-1/2 w-full space-y-4">
-            {data.topPapers.map((paper, idx) => (
-              <div key={idx} className="relative bg-gradient-to-r from-slate-900 to-[#0b101e] border border-slate-800 p-6 rounded-2xl shadow-[0_10px_40px_-10px_rgba(8,145,178,0.1)] hover:border-cyan-500/30 transition-all">
-                <div className="absolute -left-[1px] top-1/2 -translate-y-1/2 w-[2px] h-1/2 bg-cyan-500 rounded-full shadow-[0_0_10px_rgba(34,211,238,1)]"></div>
-                <h4 className="text-lg font-bold text-white mb-1">{paper.title}</h4>
-                <p className="text-sm text-cyan-400 font-medium mb-3">{paper.authors}</p>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-mono border-t border-slate-800 pt-3">
-                  <span className="text-white font-bold">{paper.citations}</span> Indexed Citations
+            {liveStats.topPapers.length === 0 ? (
+              <p className="text-slate-500 italic">No approved publications to display yet.</p>
+            ) : (
+              liveStats.topPapers.map((paper, idx) => (
+                <div key={idx} className="relative bg-gradient-to-r from-slate-900 to-[#0b101e] border border-slate-800 p-6 rounded-2xl shadow-[0_10px_40px_-10px_rgba(8,145,178,0.1)] hover:border-cyan-500/30 transition-all">
+                  <div className="absolute -left-[1px] top-1/2 -translate-y-1/2 w-[2px] h-1/2 bg-cyan-500 rounded-full shadow-[0_0_10px_rgba(34,211,238,1)]"></div>
+                  <h4 className="text-lg font-bold text-white mb-1">{paper.title}</h4>
+                  <p className="text-sm text-cyan-400 font-medium mb-3">{paper.authors}</p>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 font-mono border-t border-slate-800 pt-3">
+                    <span className="text-white font-bold">{paper.citations}</span> Indexed Citations
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
@@ -209,15 +192,19 @@ export default function CollegeDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {data.departments.map((dept, idx) => (
-              <div key={idx} className="bg-[#0b101e] border border-slate-800 hover:border-cyan-500 p-6 rounded-2xl group transition-all">
-                <h3 className="text-sm font-bold text-white mb-4 group-hover:text-cyan-400 transition-colors">{dept.name}</h3>
-                <div className="flex justify-between items-center text-xs font-mono">
-                  <span className="text-slate-500">Faculty Profiles:</span>
-                  <span className="text-white font-bold bg-slate-800 px-2 py-1 rounded">{dept.faculty}</span>
+            {liveStats.departments.length === 0 ? (
+               <p className="text-slate-500 col-span-full text-center">No departments registered.</p>
+            ) : (
+              liveStats.departments.map((dept, idx) => (
+                <div key={idx} className="bg-[#0b101e] border border-slate-800 hover:border-cyan-500 p-6 rounded-2xl group transition-all">
+                  <h3 className="text-sm font-bold text-white mb-4 group-hover:text-cyan-400 transition-colors">{dept.name}</h3>
+                  <div className="flex justify-between items-center text-xs font-mono">
+                    <span className="text-slate-500">Faculty Profiles:</span>
+                    <span className="text-white font-bold bg-slate-800 px-2 py-1 rounded">{dept.faculty}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
