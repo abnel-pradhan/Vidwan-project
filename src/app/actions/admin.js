@@ -1,12 +1,13 @@
-// src/app/actions/admin.js
 'use server';
 
 import { prisma } from '@/app/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export async function getAdminDashboardData(filters = {}) {
   try {
     const { departmentId = 'all', academicYear = 'all' } = filters;
 
+    // 1. Build the dynamic filters
     const publicationWhere = {};
 
     if (academicYear && academicYear !== 'all') {
@@ -15,42 +16,40 @@ export async function getAdminDashboardData(filters = {}) {
 
     if (departmentId && departmentId !== 'all') {
       publicationWhere.authors = {
-        some: {
-          facultyProfile: {
-            departmentId: departmentId,
-          },
-        },
+        some: { facultyProfile: { departmentId: departmentId } }
       };
     }
 
-    // Fetch departments
+    // 2. Fetch departments for the dropdown UI
     const departments = await prisma.department.findMany({
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     });
 
-    // Counts
-    const totalPapers = await prisma.publication.count({
+    // 3. Calculate Live Metrics using correct schema ENUMs
+    const totalIngested = await prisma.publication.count({
       where: publicationWhere,
     });
 
-    const pendingPapersCount = await prisma.publication.count({
-      where: { ...publicationWhere, status: 'PENDING' },
+    const awaitingApproval = await prisma.publication.count({
+      where: { ...publicationWhere, status: 'PENDING_APPROVAL' }, // FIXED ENUM
     });
 
-    const approvedPapersCount = await prisma.publication.count({
-      where: { ...publicationWhere, status: 'APPROVED' },
+    const naacApproved = await prisma.publication.count({
+      where: { 
+        ...publicationWhere, 
+        status: 'APPROVED',
+        naacMappings: { some: {} } // Ensures it was actually mapped in the NAAC engine
+      },
     });
 
-    // Pending list with facultyProfile relation
+    // 4. Fetch the queue for the "Papers Awaiting Approval" table
     const pendingList = await prisma.publication.findMany({
-      where: { ...publicationWhere, status: 'PENDING' },
+      where: { ...publicationWhere, status: 'PENDING_APPROVAL' },
       include: {
         authors: {
           include: {
-            facultyProfile: {
-              include: { department: true },
-            },
+            facultyProfile: { include: { department: true } },
           },
         },
       },
@@ -58,21 +57,19 @@ export async function getAdminDashboardData(filters = {}) {
       take: 20,
     });
 
-    // Recent logs
-    const recentLogs = await prisma.systemLog
-      ? await prisma.systemLog.findMany({
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        })
-      : [];
+    // 5. Fetch Activity Logs (FIXED from SystemLog to ActivityLog based on your schema)
+    const recentLogs = await prisma.activityLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
 
     return {
       success: true,
       departments,
       metrics: {
-        totalPapers,
-        pendingPapersCount,
-        approvedPapersCount,
+        totalIngested,
+        awaitingApproval,
+        naacApproved,
         systemHealth: 'Optimal',
       },
       pendingList,
@@ -91,17 +88,15 @@ export async function updatePublicationStatus(id, status) {
       data: { status },
     });
 
-    try {
-      if (prisma.systemLog) {
-        await prisma.systemLog.create({
-          data: {
-            action: status === 'APPROVED' ? 'PAPER_APPROVED_NAAC' : 'PAPER_REJECTED',
-            details: { title: updated.title, id: updated.id },
-          },
-        });
-      }
-    } catch (_) {}
+    // Log the action safely
+    await prisma.activityLog.create({
+      data: {
+        action: status === 'APPROVED' ? 'PAPER_APPROVED' : 'PAPER_REJECTED',
+        details: { title: updated.title, id: updated.id },
+      },
+    });
 
+    revalidatePath('/admin');
     return { success: true, publication: updated };
   } catch (error) {
     console.error('Error updating status:', error);

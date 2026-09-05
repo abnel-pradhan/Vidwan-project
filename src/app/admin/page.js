@@ -31,6 +31,7 @@ export default function AdminDashboardPage() {
     setLoading(false);
   }
 
+  // We only need one useEffect now!
   useEffect(() => {
     loadData(selectedDepartment, selectedAcademicYear);
   }, [selectedDepartment, selectedAcademicYear]);
@@ -44,6 +45,7 @@ export default function AdminDashboardPage() {
     }
   }
 
+  // Pulling everything (including metrics) straight from our unified data state
   const { metrics, pendingList, recentLogs, departments = [] } = data || {};
 
   return (
@@ -92,7 +94,6 @@ export default function AdminDashboardPage() {
               academicYear={selectedAcademicYear} 
             />
             
-            {/* NEW: Register Faculty Button */}
             <Link
               href="/admin/add-faculty"
               className="rounded-lg bg-slate-800 border border-slate-700 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-700 transition inline-flex items-center"
@@ -100,7 +101,6 @@ export default function AdminDashboardPage() {
               + Register Faculty
             </Link>
 
-            {/* UPDATED: Points to the secure ingest route */}
             <Link
               href="/admin/ingest"
               className="rounded-lg bg-cyan-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-cyan-500 transition inline-flex items-center shadow-[0_0_15px_rgba(8,145,178,0.3)]"
@@ -176,15 +176,18 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="rounded-xl border border-slate-800 bg-[#0a0f1a] p-5">
             <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Ingested</div>
-            <div className="text-2xl font-bold text-white mt-2">{metrics?.totalPapers || 0}</div>
+            {/* FIXED: Using correct object key 'totalIngested' */}
+            <div className="text-2xl font-bold text-white mt-2">{metrics?.totalIngested || 0}</div>
           </div>
           <div className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-5">
             <div className="text-xs font-medium text-amber-400 uppercase tracking-wider">Awaiting Approval</div>
-            <div className="text-2xl font-bold text-amber-300 mt-2">{metrics?.pendingPapersCount || 0}</div>
+            {/* FIXED: Using correct object key 'awaitingApproval' */}
+            <div className="text-2xl font-bold text-amber-300 mt-2">{metrics?.awaitingApproval || 0}</div>
           </div>
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-5">
             <div className="text-xs font-medium text-emerald-400 uppercase tracking-wider">NAAC Approved</div>
-            <div className="text-2xl font-bold text-emerald-300 mt-2">{metrics?.approvedPapersCount || 0}</div>
+            {/* FIXED: Using correct object key 'naacApproved' */}
+            <div className="text-2xl font-bold text-emerald-300 mt-2">{metrics?.naacApproved || 0}</div>
           </div>
           <div className="rounded-xl border border-slate-800 bg-[#0a0f1a] p-5">
             <div className="text-xs font-medium text-slate-400 uppercase tracking-wider">System Health</div>
