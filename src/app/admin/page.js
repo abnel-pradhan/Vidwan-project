@@ -107,6 +107,12 @@ export default function AdminDashboardPage() {
             >
               + Ingest Papers
             </Link>
+            <Link 
+            href="/admin/naac" 
+            className="rounded-lg bg-blue-600/20 border border-blue-500/30 px-4 py-2.5 text-xs font-semibold text-blue-400 hover:bg-blue-600 hover:text-white transition inline-flex items-center gap-2 shadow-[0_0_10px_rgba(59,130,246,0.1)]"
+             >
+              Map NAAC Criteria
+             </Link>
           </div>
         </div>
 
