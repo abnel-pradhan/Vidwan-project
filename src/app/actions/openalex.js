@@ -1,60 +1,102 @@
 'use server';
 
 import { prisma } from '@/app/lib/prisma';
-import { revalidatePath } from 'next/cache';
 
-// 1. Fetch live data from OpenAlex
-export async function fetchFacultyPapers(orcid) {
+/**
+ * Step 1: Search OpenAlex for an author by name or ORCID
+ */
+export async function searchOpenAlexAuthor(query) {
   try {
-    const url = `https://api.openalex.org/works?filter=author.orcid:https://orcid.org/${orcid}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    return data.results.map(work => ({
-      openAlexId: work.id,
-      title: work.title,
-      publicationYear: work.publication_year,
-      citationCount: work.cited_by_count || 0,
-      doi: work.doi,
-      journalName: work.primary_location?.source?.display_name || 'Unknown',
-    }));
+    const res = await fetch(
+      `https://api.openalex.org/authors?search=${encodeURIComponent(query)}`,
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) throw new Error('Failed to fetch author from OpenAlex');
+    
+    const data = await res.json();
+    return {
+      success: true,
+      authors: (data.results || []).map((author) => ({
+        id: author.id, 
+        displayName: author.display_name,
+        worksCount: author.works_count,
+        citedByCount: author.cited_by_count,
+        lastKnownInstitution: author.last_known_institutions?.[0]?.display_name || 'N/A',
+        orcid: author.orcid || null,
+      })),
+    };
   } catch (error) {
-    console.error("OpenAlex fetch error:", error);
-    return [];
+    return { success: false, error: error.message };
   }
 }
 
-// 2. Save the fetched papers to your database
-export async function saveIngestedPaper(paperData, facultyId) {
+/**
+ * Step 2: Fetch and format all publications for a specific OpenAlex Author ID.
+ */
+export async function fetchFacultyPapers(authorOpenAlexId) {
   try {
-    // Check if the paper already exists to prevent duplicates
-    const existing = await prisma.publication.findUnique({
-      where: { openAlexId: paperData.openAlexId }
-    });
+    const cleanId = authorOpenAlexId.replace('https://openalex.org/', '');
+    
+    const res = await fetch(
+      `https://api.openalex.org/works?filter=author.id:${cleanId}&sort=publication_year:desc&per-page=50`,
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) throw new Error('Failed to fetch works from OpenAlex');
 
-    if (existing) return { success: false, error: 'Paper already ingested.' };
+    const data = await res.json();
 
-    await prisma.publication.create({
-      data: {
+    const formattedPapers = (data.results || []).map((work) => ({
+      openAlexId: work.id,
+      title: work.title || 'Untitled Work',
+      publicationYear: work.publication_year || new Date().getFullYear(),
+      doi: work.doi || null,
+      journalName: work.primary_location?.source?.display_name || null,
+      publisher: work.primary_location?.source?.host_organization_name || null,
+      citationCount: work.cited_by_count || 0,
+      isOpenAccess: work.open_access?.is_oa || false,
+      openAccessUrl: work.open_access?.oa_url || null,
+      landingPageUrl: work.primary_location?.landing_page_url || work.doi || null,
+    }));
+
+    return { success: true, count: data.meta?.count || formattedPapers.length, papers: formattedPapers };
+  } catch (error) {
+    return { success: false, error: error.message, papers: [] };
+  }
+}
+
+/**
+ * Step 3: Save the fetched paper into our database for Faculty Approval
+ */
+export async function saveIngestedPaper(paperData, facultyProfileId) {
+  try {
+    // Upsert ensures we don't create duplicate papers if ingested twice
+    const publication = await prisma.publication.upsert({
+      where: { openAlexId: paperData.openAlexId },
+      update: {
+        citationCount: paperData.citationCount, // Update citations if it already exists
+      },
+      create: {
+        openAlexId: paperData.openAlexId,
         title: paperData.title,
         publicationYear: paperData.publicationYear,
-        citationCount: paperData.citationCount,
         doi: paperData.doi,
-        openAlexId: paperData.openAlexId,
         journalName: paperData.journalName,
-        status: 'PENDING_APPROVAL', // Queued for the Admin Dashboard
+        publisher: paperData.publisher,
+        citationCount: paperData.citationCount,
+        isOpenAccess: paperData.isOpenAccess,
+        status: 'PENDING_APPROVAL', // Goes to the faculty workspace for review
         authors: {
           create: {
-            facultyProfileId: facultyId
+            facultyProfileId: facultyProfileId,
+            isCorresponding: false
           }
         }
       }
     });
 
-    revalidatePath('/admin');
-    return { success: true };
+    return { success: true, publication };
   } catch (error) {
-    console.error("Database save error:", error);
-    return { success: false, error: 'Failed to save paper.' };
+    console.error("Error saving ingested paper:", error);
+    return { success: false, error: error.message };
   }
 }
