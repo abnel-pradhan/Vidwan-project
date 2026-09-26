@@ -1,22 +1,15 @@
-import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../../generated/client';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set');
-}
-
-// DO NOT create a manual 'pg' Pool. 
-// Pass the URL directly to PrismaPg so it can read '?pgbouncer=true'
-const adapter = new PrismaPg({ connectionString });
-
+// We use the standard PrismaClient but explicitly pass the URL 
+// to prevent the Vercel build crash while letting Prisma natively handle PgBouncer!
 export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient({ adapter });
+  globalForPrisma.prisma ?? new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL
+  });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
