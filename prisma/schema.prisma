@@ -5,7 +5,9 @@ generator client {
 
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // This must be your 5432 URL without pgbouncer tags
 }
 // -----------------------------------------------------------------------------
 // ENUMS
