@@ -1,6 +1,5 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  serverExternalPackages: ['@prisma/client'],
+module.exports = {
+  outputFileTracingIncludes: {
+    '/auth/signin': ['./src/generated/client/**/*'],
+  },
 };
-
-export default nextConfig;
