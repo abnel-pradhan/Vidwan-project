@@ -6,20 +6,11 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-const connectionString = process.env.DATABASE_URL;
+// 1. Give Next.js a fallback string during static builds so the compiler never crashes
+const connectionString = process.env.DATABASE_URL || 'postgresql://dummy:dummy@dummy:5432/dummy';
 
-if (!connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set');
-}
-
-// 1. Wrap the connection string in the Pool
-// 2. Inject the SSL bypass here to fix the P1011 self-signed certificate crash
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false }
-});
-
-// 3. Pass the Pool into the adapter
+// 2. We let the 'pg' library handle the SSL natively via the Vercel URL
+const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
 export const prisma =
